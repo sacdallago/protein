@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Web usage example</title>
+</head>
+<body>
+<h1>Examples</h1>
+<div id="container"></div>
+<script src="../build/protein.js"></script>
+<script>
+    function createElement(text) {
+        let root = document.getElementById("container");
+
+        let current = document.createElement("div");
+        current.innerText = text;
+
+        root.appendChild(current);
+    }
+
+    var fasta = `
+;LCBO - Prolactin precursor - Bovine
+; a sample sequence in FASTA format
+MDSKGSSQKGSRLLLLLVVSNLLLCQGVVSTPVCPNGPGNCQVSLRDLFDRAVMVSHYIHDLSS
+EMFNEFDKRYAQGKGFITMALNSCHTSSLPTPEDKEQAQQTHHEVLMSLILGLLRSWNDPLYHL
+VTEVRGMKGAPDAILSRAIEIEEENKRLLEGMEMIFGQVIPGAKETEPYPVWSGLPSLQTKDED
+ARYSAFYNLLHCLRRDSSKIDTYLKLLNCRIIYNNNC*
+
+>MCHU - Calmodulin - Human, rabbit, bovine, rat, and chicken
+ADQLTEEQIAEFKEAFSLFDKDGDGTITTKELGTVMRSLGQNPTEAELQDMINEVDADGNGTID
+FPEFLTMMARKMKDTDSEEEIREAFRVFDKDGNGYISAAELRHVMTNLGEKLTDEEVDEMIREA
+DIDGDGQVNYEEFVQMMTAK*
+
+>gi|5524211|gb|AAD44166.1| cytochrome b [Elephas maximus maximus]
+LCLYTHIGRNIYYGSYLYSETWNTGIMLLLITMATAFMGYVLPWGQMSFWGATVITNLFSAIPYIGTNLV
+EWIWGGFSVDKATLNRFFAFHFILPFTMVALAGVHLTFLHETGSNNPLGLTSDSDKIPFHPYYTIKDFLG
+LLILILLLLLLALLSPDMLGDPDNHMPADPLNTPLHIKPEWYFLFAYAILRSVPNKLGGVLALFLSIVIL
+GLMPFLHTSKHRSMMLRPLSQALFWTLTMDLLTLTWIGSQPVEYPYTIIGQMASILYFSIILAFLPIAGX
+IENY
+
+;LCBO - Prolactin precursor - Bovine
+; a sample sequence in FASTA format
+MDSKGSSQKGSRLLLLLVVSNLLLCQGVVSTPVCPNGPGNCQVSLRDLFDRAVMVSHYIHDLSS
+EMFNEFDKRYAQGKGFITMALNSCHTSSLPTPEDKEQAQQTHHEVLMSLILGLLRSWNDPLYHL
+VTEVRGMKGAPDAILSRAIEIEEENKRLLEGMEMIFGQVIPGAKETEPYPVWSGLPSLQTKDED
+ARYSAFYNLLHCLRRDSSKIDTYLKLLNCRIIYNNNC*
+    `;
+
+    let p = Protein.fromFasta(fasta);
+
+    createElement("-----------------------------------");
+    createElement(JSON.stringify(p));
+    createElement("-----------------------------------");
+</script>
+</body>
+</html>

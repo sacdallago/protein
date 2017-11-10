@@ -1,0 +1,39 @@
+{
+    "name": "protein",
+    "description": "A collecection of parsers for proteins",
+    "version": "0.0.1",
+    "homepage": "https://github.com/sacdallago/protein",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/sacdallago/protein.git"
+    },
+    "author": {
+        "name": "Christian Dallago",
+        "email": "code@dallago.us"
+    },
+    "license": "GPL-3.0",
+    "dependencies": {},
+    "devDependencies": {
+        "browserify": "latest",
+        "watchify": "latest",
+        "jshint": "latest",
+        "webpack": "latest"
+    },
+    "keywords": [
+        "protein",
+        "parser"
+    ],
+    "main": "build/protein.js",
+    "scripts": {
+        "build": "webpack",
+        "watch": "webpack --progress --colors --watch",
+        "lint": "jshint -c .jshintrc lib --verbose",
+        "prepublish": "webpack"
+    },
+    "contributors": [
+        "Christian Dallago <code@dallago.us> (https://github.com/sacdallago)"
+    ],
+    "bugs": {
+        "url": "https://github.com/sacdallago/protein/issues"
+    }
+}

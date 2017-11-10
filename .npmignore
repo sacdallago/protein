@@ -1,0 +1,7 @@
+.gitignore
+examples/
+private/
+Gruntfile.js
+LICENSE
+README.md
+node_modules
