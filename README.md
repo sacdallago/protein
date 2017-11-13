@@ -19,10 +19,7 @@ Require this package via npm, then:
     ```html
     <script src="path/to/build/disi.js"></script>
 
-    <script>
-        let v = [1,2];
-        let u = [3,2];
-        let euclidian = Disi.euclidian(u, v));
+    <s        let euclidian = Disi.euclidian(u, v));
         alert(euclidian);
     </script>
     ```
