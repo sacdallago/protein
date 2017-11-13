@@ -136,7 +136,6 @@ class Protein {
                 switch(true){
                     // Marks beginning of sequence in common FASTA file
                     case /^>/.test(line):
-
                     // Comments can only appear in header. If ; appears while reading a sequence,
                     // am most likely starting to read a new protein which laks the usual > beginning.
                     // Be very strict about this condition.
@@ -180,12 +179,12 @@ class Protein {
                     default:
                         console.error("Don't know what to do with line: " + line);
                         throw ("Could not parse one line of FASTA input");
-                        break
+                        break;
                 }
             });
 
+        // TODO: Think about Protein class constructor
         console.log(sequences);
-
         return new Protein();
     }
 }
