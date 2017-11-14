@@ -118,22 +118,32 @@ export function fromFasta(text){
             }
         });
 
-    // TODO: Think about Protein class constructor
+    // TODO: Think about how to return stuff!!
     console.log(sequences);
     return new Protein();
 }
 
+// TODO: documentation!
+/**
+ * Get Protein object from Fasta string.
+ *
+ *
+ * @param text - A string representing the fasta input
+ * @returns {Protein}
+ */
 export function byAccession(accession, callback) {
     callback = callback || function(){};
     let url = 'https://www.ebi.ac.uk/proteins/api/proteins/' + accession;
 
     if (process.browser) {
         $.get(url, (protein) => {
-            callback(protein, new Protein(protein.sequence.sequence, accession));
+            callback(new Protein(protein.sequence.sequence, accession), protein);
         }).fail(() => {
             callback(undefined, undefined);
         });
     } else {
+
+        // TODO: impement callback and retrival on node sie!
         request
             .get('http://google.com/img.png')
             .on('response', function(response) {

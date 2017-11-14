@@ -48,6 +48,6 @@ try {
 
 console.log(p);
 
-Protein.byAccession();
+Protein.byAccession("P12345");
 
 console.log("\n\nEnd_of_file.");
