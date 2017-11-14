@@ -1,7 +1,3 @@
-'use strict';
-
-Object.defineProperty(exports, '__esModule', { value: true });
-
 /***
  * Protein
  *
@@ -13,9 +9,12 @@ Object.defineProperty(exports, '__esModule', { value: true });
  *      10 Nov 2017
  */
 
+let $;
 let request;
 
-{
+if (process.browser) {
+    $ = require('jquery');
+} else {
     request = require('request');
 }
 
@@ -24,7 +23,7 @@ let request;
 /**
  * Class Protein exports functions to parse specific text formats
  */
-class Protein {
+export class Protein {
 
     constructor(sequence, identifier){
         this.sequence = sequence;
@@ -48,7 +47,7 @@ class Protein {
  * @param text - A string representing the fasta input
  * @returns {Protein}
  */
-function fromFasta(text){
+export function fromFasta(text){
     if(typeof text !== 'string'){
         throw "Passed invalid object to parse function."
     }
@@ -124,21 +123,25 @@ function fromFasta(text){
     return new Protein();
 }
 
-function byAccession(accession, callback) {
+export function byAccession(accession, callback) {
     callback = callback || function(){};
-    {
+    let url = 'https://www.ebi.ac.uk/proteins/api/proteins/' + accession;
+
+    if (process.browser) {
+        $.get(url, (protein) => {
+            callback(protein, new Protein(protein.sequence.sequence, accession));
+        }).fail(() => {
+            callback(undefined, undefined);
+        });
+    } else {
         request
             .get('http://google.com/img.png')
             .on('response', function(response) {
-                console.log(response.statusCode); // 200
-                console.log(response.headers['content-type']); // 'image/png'
+                console.log(response.statusCode) // 200
+                console.log(response.headers['content-type']) // 'image/png'
             })
             .pipe(request.put('http://mysite.com/img.png'));
     }
 
     return undefined;
 }
-
-exports.Protein = Protein;
-exports.fromFasta = fromFasta;
-exports.byAccession = byAccession;

@@ -1,4 +1,4 @@
-const Protein = require('../build/protein.js');
+const Protein = require('../build/protein-node.js');
 
 
 let fasta = `
@@ -47,5 +47,7 @@ try {
 }
 
 console.log(p);
+
+Protein.byAccession();
 
 console.log("\n\nEnd_of_file.");

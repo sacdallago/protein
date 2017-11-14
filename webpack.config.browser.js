@@ -1,11 +1,11 @@
 var webpack = require('webpack');
 
 module.exports = {
-    target: "node",
-    entry: __dirname + '/lib/index.js',
+    target: "web",
+    entry: __dirname + '/lib/browser.js',
     output: {
         path: __dirname + '/build',
-        filename: 'protein-node.js',
+        filename: 'protein-browser.js',
         libraryTarget: 'umd',
         umdNamedDefine: true,
         library: 'Protein'

@@ -7,7 +7,7 @@
 <body>
 <h1>Examples</h1>
 <div id="container"></div>
-<script src="../build/protein.js"></script>
+<script src="../build/protein-browser.js"></script>
 <script>
     function createElement(text) {
         let root = document.getElementById("container");
@@ -47,6 +47,8 @@ ARYSAFYNLLHCLRRDSSKIDTYLKLLNCRIIYNNNC*
     `;
 
     let p = Protein.fromFasta(fasta);
+
+    Protein.byAccession();
 
     createElement("-----------------------------------");
     createElement(JSON.stringify(p));
