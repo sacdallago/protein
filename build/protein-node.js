@@ -16933,17 +16933,6 @@ function _interopDefault(ex) {
 
 var md5 = _interopDefault(__webpack_require__(89));
 
-/***
- * Protein
- *
- * Created by:
- *      Christian Dallago
- *      code@dallago.us
- *
- * Created on:
- *      10 Nov 2017
- */
-
 let request;
 
 {
@@ -16974,8 +16963,8 @@ class Protein {
  * Get Protein objects from Fasta string.
  *
  *
- * @param text - A string representing the fasta input
- * @returns {Protein}
+ * @param       {String}    text    A string representing the FASTA input
+ * @return      {Array}     An array of the form [[Prtoein],[raw_fasta_parsing]], which can be decomposed as needed
  */
 function fromFasta(text) {
     if (typeof text !== 'string') {
@@ -17057,9 +17046,9 @@ function fromFasta(text) {
  * Get Protein object from Accession number (via UniProt).
  *
  *
- * @param accession - A string representing the uniprot accession number (eg.: P12345)
+ * @param           {String}    accession   A string representing the uniprot accession number (eg.: P12345)
  *
- * @returns {Promise} - A promise that in it's `then` clause accepts an array parameter
+ * @return          {Promise}   A promise that in it's `then` clause accepts an array parameter
  * which can be decomposed (`then([p,r])`:
  * (p) being a Protein object and the second
  * (r) being the raw GET result from uniprot

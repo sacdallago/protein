@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width" charset="utf-8">
+    <title>Protein</title>
+    <link rel="stylesheet" href="css/bootstrap.min.css">
+    <link rel="stylesheet" href="css/cayman.min.css">
+    <link rel="stylesheet" href="css/prism.min.css">
+    <link rel="stylesheet" href="css/index.min.css">
+    <link rel="stylesheet" href="css/docs.min.css">
+    <link rel="stylesheet" href="css/bootstrap-responsive.min.css">
+  </head>
+  <body data-spy="scroll" data-target=".scrollspy">
+    <div class="navbar navbar-inverse navbar-fixed-top">
+      <div class="navbar-inner">
+        <div class="container"><a class="brand">Mr. Doc</a>
+          <div class="nav-collapse collapse">
+            <ul class="nav pull-right sponsored"></ul>
+          </div>
+        </div>
+      </div>
+    </div>
+    <header id="overview" class="jumbotron subhead">
+      <div class="container">
+        <h1>Protein</h1>
+        <p class="lead"></p>
+      </div>
+    </header>
+    <div class="container">
+      <div class="row">
+        <div class="span3 bs-docs-sidebar">
+          <ul class="nav nav-list bs-docs-sidenav affix-top">
+            <li><a href="index.html">Main</a></li>
+            <li class="active"><a href="browser.js.html">browser.js</a></li>
+            <li><a href="index.js.html">index.js</a></li>
+          </ul>
+          <div class="scrollspy">
+            <ul class="nav nav-list bs-docs-sidenav affix-top">
+              <li><a href="#Protein"><i class="alert alert-success"></i><span>Protein</span></a>
+              </li>
+              <li><a href="#fromFasta"><i class="alert alert-info"></i><span>fromFasta</span></a>
+              </li>
+              <li><a href="#byAccession"><i class="alert alert-info"></i><span>byAccession</span></a>
+              </li>
+            </ul>
+          </div>
+        </div>
+        <div class="span9">
+          <section id="Protein">
+            <h1>Protein</h1>
+            <h5 class="subheader"></h5>
+            <p>
+              <div class="label label-success radius ctx-type">class</div><span>&nbsp;</span><span>new Protein()</span><span>&nbsp;</span>
+            </p>
+          </section>
+          <div class="description"><p>Class Protein exports functions to parse specific text formats</p></div>
+          <pre><code class="language-javascript">class Protein {
+
+    constructor(sequence, identifier){
+        this.sequence = sequence;
+        this.identifier = identifier;
+        this.hash = md5(sequence);
+    }
+
+    hasMapping(){
+        return false;
+    }
+
+    getUniprotMapping(){
+        return undefined;
+    }
+}</code></pre>
+          <section id="fromFasta">
+            <h1>fromFasta</h1>
+            <h5 class="subheader"></h5>
+            <p>
+              <div class="label label-info radius ctx-type">function</div><span>&nbsp;</span><span>fromFasta()</span><span>&nbsp;</span>
+            </p>
+          </section>
+          <table class="table table-bordered table-striped">
+            <thead>
+              <tr>
+                <th style="width:20%">Option name</th>
+                <th style="width:20%">Type</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>text</td>
+                <td>String</td>
+                <td><p>A string representing the FASTA input</p></td>
+              </tr>
+              <tr>
+                <td>return</td>
+                <td>Array</td>
+                <td><p>An array of the form [[Prtoein],[raw_fasta_parsing]], which can be decomposed as needed</p></td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="description"><p>Get Protein objects from Fasta string.</p></div>
+          <pre><code class="language-javascript">function fromFasta(text){
+    if(typeof text !== 'string'){
+        throw &quot;Passed invalid object to parse function.&quot;
+    }
+    else if(text.length &lt; 1){
+        throw &quot;Passed an empty string.&quot;
+    }
+
+    let sequences = [];
+
+    // this flag get's updated when I'm reading a sequence. No comments should appear when I'm reading a sequence (see switch).
+    let readingSequence = false;
+    let readingHeaders = false;
+
+    text
+    // Split line by line
+        .split(&quot;\n&quot;)
+        // Get rid of lines only containing spaces or tabs (or nothing)
+        .filter(s =&gt; s.replace(/[\s|\t]+/,'').length &gt; 0)
+        // Perform switch on line output
+        .forEach((line) =&gt; {
+            switch(true){
+                // Marks beginning of sequence in common FASTA file
+                case /^&gt;/.test(line):
+                // Comments can only appear in header. If ; appears while reading a sequence,
+                // am most likely starting to read a new protein which laks the usual &gt; beginning.
+                // Be very strict about this condition.
+                case (/^;/.test(line) &amp;&amp; readingSequence === true &amp;&amp; readingHeaders === false):
+                // Case where ; sequence starts at beginning of file
+                case (/^;/.test(line) &amp;&amp; readingSequence === false &amp;&amp; readingHeaders === false):
+                    sequences.push({
+                        header: line.substring(1, line.length),
+                        sequence: '',
+                        comments: ''
+                    });
+
+                    readingHeaders = true;
+                    readingSequence = false;
+
+                    break;
+
+                // Some sequences terminate in *. Get rid of that and update the reading sequence condition.
+                case /^[A-Z]+\*$/.test(line):
+                    sequences[sequences.length-1].sequence += line.substring(1, line.length-1);
+
+                    readingSequence = false;
+
+                    break;
+
+                // If repetition of characters, most likely sequence
+                // IMPORTANT!!! ONLY CAPITAL LETTERS!!!!
+                case /^[A-Z]+$/.test(line):
+                    sequences[sequences.length-1].sequence += line;
+
+                    readingSequence = true;
+                    readingHeaders = false;
+
+                    break;
+
+                // If reading header and ; appears: it's a comment
+                case (/^;/.test(line) &amp;&amp; readingSequence === false &amp;&amp; readingHeaders === true):
+                    sequences[sequences.length-1].comments += line.substring(1, line.length) + ' ';
+                    break;
+
+                // Something weird happened!
+                default:
+                    console.error(&quot;Don't know what to do with line: &quot; + line);
+                    throw (&quot;Could not parse one line of FASTA input&quot;);
+                    break;
+            }
+        });
+
+    return [sequences.map(s =&gt; {
+        return new Protein(s.sequence);
+    }),sequences];
+}</code></pre>
+          <section id="byAccession">
+            <h1>byAccession</h1>
+            <h5 class="subheader"></h5>
+            <p>
+              <div class="label label-info radius ctx-type">function</div><span>&nbsp;</span><span>byAccession()</span><span>&nbsp;</span>
+            </p>
+          </section>
+          <table class="table table-bordered table-striped">
+            <thead>
+              <tr>
+                <th style="width:20%">Option name</th>
+                <th style="width:20%">Type</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>accession</td>
+                <td>String</td>
+                <td><p>A string representing the uniprot accession number (eg.: P12345)</p></td>
+              </tr>
+              <tr>
+                <td>return</td>
+                <td>Promise</td>
+                <td><p>A promise that in it&#39;s <code>then</code> clause accepts an array parameter which can be decomposed (<code>then([p,r])</code>:<br />(p) being a Protein object and the second<br />(r) being the raw GET result from uniprot<br />Promise get&#39;s rejected (aka. <code>catch</code> clause) if 5<strong> or 4</strong> response from server.</p></td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="description"><p>Get Protein object from Accession number (via UniProt).</p></div>
+          <pre><code class="language-javascript">function byAccession(accession) {
+    let url = 'https://www.ebi.ac.uk/proteins/api/proteins/' + accession;
+
+    {
+        return new Promise((resolve, reject) =&gt; {
+            $.get(url, (protein) =&gt; {
+                resolve([new Protein(protein.sequence.sequence, accession), protein]);
+            }).fail(() =&gt; {
+                reject();
+            });
+        });
+    }
+}
+
+exports.Protein = Protein;
+exports.fromFasta = fromFasta;
+exports.byAccession = byAccession;</code></pre>
+        </div>
+      </div>
+    </div>
+    <footer class="footer">
+      <div class="container">
+        <p>Documentation generated with <a href="https://github.com/mr-doc/mr-doc">Mr. Doc </a> created by <a href="https://twitter.com/FGRibreau" data-show-count="false" class="twitter-follow-button">Francois-Guillaume Ribreau </a></p>
+        <p>Mr. Doc is sponsored by <a href="http://bringr.net/?btt" title="Outil d'analyse des réseaux sociaux" class="bringr">Bringr </a> and <a href="https://redsmin.com/?btt" title="Full Redis GUI" class="redsmin">Redsmin</a></p>
+        <p>Theme borrowed from Twitter Bootstrap</p>
+      </div>
+    </footer>
+    <script src="js/twitter-widget.min.js"></script>
+    <script src="js/jquery.min.js"></script>
+    <script src="js/bootstrap-transition.min.js"></script>
+    <script src="js/bootstrap-scrollspy.min.js"></script>
+    <script src="js/bootstrap-dropdown.min.js"></script>
+    <script src="js/bootstrap-collapse.min.js"></script>
+    <script src="js/bootstrap-affix.min.js"></script>
+    <script src="js/prism.min.js"></script>
+    <script src="js/index.min.js"></script>
+  </body>
+</html>
