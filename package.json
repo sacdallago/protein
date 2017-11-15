@@ -46,7 +46,7 @@
         "build-node": "webpack",
         "rollup": "rollup -c > lib/index.js && BROWSER=true rollup -c > lib/browser.js",
         "build": "npm run rollup && npm run build-browser && npm run build-node",
-        "watch": "watch 'npm run build' src",
+        "watch": "watch 'npm run build && npm run docs' src",
         "docs": "mr-doc -s lib/ -o docs/ -n 'Protein'",
         "lint": "jshint -c .jshintrc lib --verbose",
         "prepublish": "npm run build"
