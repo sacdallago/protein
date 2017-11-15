@@ -38,16 +38,17 @@ ARYSAFYNLLHCLRRDSSKIDTYLKLLNCRIIYNNNC*
 Random text
     `;
 
-let p = Protein.fromFasta(fasta);
+let [proteins, parsedFasta] = Protein.fromFasta(fasta);
 
-try {
-    let _ = Protein.fromFasta(invalid);
-} catch (e) {
-    console.error(e);
-}
+console.log(proteins);
 
-console.log(p);
-
-Protein.byAccession("P12345");
+Protein.byAccession("P12345")
+    .then(([protein, raw]) => {
+        console.log(protein);
+        console.log(raw);
+    })
+    .catch(() => {
+        console.error("could not GET protein by accession");
+    });
 
 console.log("\n\nEnd_of_file.");

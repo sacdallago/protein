@@ -9,6 +9,9 @@
  *      10 Nov 2017
  */
 
+import md5 from 'md5';
+
+// Execution relevant imports
 let $;
 let request;
 
@@ -19,7 +22,6 @@ if (process.browser) {
 }
 
 
-
 /**
  * Class Protein exports functions to parse specific text formats
  */
@@ -27,7 +29,8 @@ export class Protein {
 
     constructor(sequence, identifier){
         this.sequence = sequence;
-        this.identifier = sequence;
+        this.identifier = identifier;
+        this.hash = md5(sequence);
     }
 
     hasMapping(){
@@ -41,7 +44,7 @@ export class Protein {
 
 
 /**
- * Get Protein object from Fasta string.
+ * Get Protein objects from Fasta string.
  *
  *
  * @param text - A string representing the fasta input
@@ -67,7 +70,7 @@ export function fromFasta(text){
         // Get rid of lines only containing spaces or tabs (or nothing)
         .filter(s => s.replace(/[\s|\t]+/,'').length > 0)
         // Perform switch on line output
-        .forEach((line,index) => {
+        .forEach((line) => {
             switch(true){
                 // Marks beginning of sequence in common FASTA file
                 case /^>/.test(line):
@@ -97,6 +100,7 @@ export function fromFasta(text){
                     break;
 
                 // If repetition of characters, most likely sequence
+                // IMPORTANT!!! ONLY CAPITAL LETTERS!!!!
                 case /^[A-Z]+$/.test(line):
                     sequences[sequences.length-1].sequence += line;
 
@@ -118,40 +122,45 @@ export function fromFasta(text){
             }
         });
 
-    // TODO: Think about how to return stuff!!
-    console.log(sequences);
-    return new Protein();
+    return [sequences.map(s => {
+        return new Protein(s.sequence);
+    }),sequences];
 }
 
-// TODO: documentation!
 /**
- * Get Protein object from Fasta string.
+ * Get Protein object from Accession number (via UniProt).
  *
  *
- * @param text - A string representing the fasta input
- * @returns {Protein}
+ * @param accession - A string representing the uniprot accession number (eg.: P12345)
+ *
+ * @returns {Promise} - A promise that in it's `then` clause accepts an array parameter
+ * which can be decomposed (`then([p,r])`:
+ * (p) being a Protein object and the second
+ * (r) being the raw GET result from uniprot
+ * Promise get's rejected (aka. `catch` clause) if 5** or 4** response from server.
  */
-export function byAccession(accession, callback) {
-    callback = callback || function(){};
+export function byAccession(accession) {
     let url = 'https://www.ebi.ac.uk/proteins/api/proteins/' + accession;
 
     if (process.browser) {
-        $.get(url, (protein) => {
-            callback(new Protein(protein.sequence.sequence, accession), protein);
-        }).fail(() => {
-            callback(undefined, undefined);
+        return new Promise((resolve, reject) => {
+            $.get(url, (protein) => {
+                resolve([new Protein(protein.sequence.sequence, accession), protein]);
+            }).fail(() => {
+                reject();
+            });
         });
     } else {
-
-        // TODO: impement callback and retrival on node sie!
-        request
-            .get('http://google.com/img.png')
-            .on('response', function(response) {
-                console.log(response.statusCode) // 200
-                console.log(response.headers['content-type']) // 'image/png'
-            })
-            .pipe(request.put('http://mysite.com/img.png'));
+        return new Promise((resolve, reject) => {
+            request
+                .get(url, (error, response, body) => {
+                    if(error){
+                        reject(error);
+                    } else {
+                        let protein = JSON.parse(body);
+                        resolve([new Protein(protein.sequence.sequence, accession), protein]);
+                    }
+                })
+        });
     }
-
-    return undefined;
 }

@@ -46,13 +46,22 @@ VTEVRGMKGAPDAILSRAIEIEEENKRLLEGMEMIFGQVIPGAKETEPYPVWSGLPSLQTKDED
 ARYSAFYNLLHCLRRDSSKIDTYLKLLNCRIIYNNNC*
     `;
 
-    let p = Protein.fromFasta(fasta);
+    let [proteins, parsedFasta] = Protein.fromFasta(fasta);
 
-    Protein.byAccession("P12345");
+    createElement("-----------PROTEINS-FASTA-----------");
+    proteins.forEach(e => createElement(JSON.stringify(e)));
+    createElement("-----------PROTEINS-FASTA-----------");
 
-    createElement("-----------------------------------");
-    createElement(JSON.stringify(p));
-    createElement("-----------------------------------");
+    Protein.byAccession("P12345")
+        .then(([protein, raw]) => {
+            createElement("-----------API-ACCESSION-----------");
+            createElement(JSON.stringify(protein));
+            createElement(JSON.stringify(raw));
+            createElement("-----------API-ACCESSION-----------");
+        })
+        .catch(() => {
+            console.error("could not GET protein by accession");
+        });
 </script>
 </body>
 </html>
