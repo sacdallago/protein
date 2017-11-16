@@ -41,17 +41,7 @@ REEIDQANNVLQTVLHQLAKAQATRDLAKLDLERTVIRAPADGWVTNLNVYAGEFITRGS
 TAVALVKKNSFYVQAYMEETKLEGVRPGYRAEITPLGSNRVLKGTVDSVAAGVTNASSTS
 DAKGMATIDSNLEWVRLAQRVPVRIRLDEQQGNLWPAGTTATVVITGKQDRDASQDSFFR
 KLAHRLREFG
-
-verkejrbjehb
-
-
-TAVALVKKNSFYVQAYMEETKLEGVRPGYRAEITPLGSNRVLKGTVDSVAAGVTNASSTSREEIDQANNVLQTVLHQLAKAQATRDLAKLDLERTVIRAPADGWVTNLNVYAGEFITRGS
-
-
-FRAWVYYTESPWTRDARFSADVVAIAPDVAGLITHVNVHDNQLVKKDQVLFTIDQPRYQKALAEAEADVAYYQVLAQEKRQEAGRRNRLGVQAMS
-
-
-rervbervjberkjvberverv`;
+`;
 
 
 Protein.fromSequence(AASequences)
@@ -99,3 +89,27 @@ Protein.fromAccession("P12345")
     .catch(() => {
         console.error("could not GET protein by accession");
     });
+
+
+Protein.fromAccession("P12345")
+    .then(([protein, raw]) => {
+        console.log("-----------API-ACCESSION-----------");
+        console.log(protein);
+        console.log("-----------API-ACCESSION-----------");
+    })
+    .catch(() => {
+        console.error("could not GET protein by accession");
+    });
+
+let testText = "ABBABABABABABABA";
+
+let parsingFunction = Protein.autodetect(testText);
+
+if(parsingFunction !== undefined){
+    parsingFunction(testText)
+        .then(([proteins, _]) => {
+            console.log("-----------AUTODETECT-----------");
+            console.log(proteins);
+            console.log("-----------AUTODETECT-----------");
+        })
+}

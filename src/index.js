@@ -9,9 +9,65 @@ if (process.browser) {
     request = require('request');
 }
 
-// Private functions
+// Private functions and constants
 // From http://www.uniprot.org/help/accession_numbers
-const accessionNumberRegex = /[OPQ][0-9][A-Z0-9]{3}[0-9]|[A-NR-Z][0-9]([A-Z][A-Z0-9]{2}[0-9]){1,2}/;
+const accessionNumberRegex = /^[OPQ][0-9][A-Z0-9]{3}[0-9]|[A-NR-Z][0-9]([A-Z][A-Z0-9]{2}[0-9]){1,2}$/;
+
+const AASequence = /^(([A-Z])+\n{0,1})+$/;
+
+const validFasta = (fasta) => {
+    text
+    // Split line by line
+        .split("\n")
+        // Get rid of lines only containing spaces or tabs (or nothing)
+        .filter(s => s.replace(/[\s|\t]+/,'').length > 0)
+        // Perform switch on line output
+        .forEach((line) => {
+            // this flag get's updated when I'm reading a sequence. No comments should appear when I'm reading a sequence (see switch).
+            let readingSequence = false;
+            let readingHeaders = false;
+
+            switch(true){
+                // Marks beginning of sequence in common FASTA file
+                case /^>/.test(line):
+                // Comments can only appear in header. If ; appears while reading a sequence,
+                // am most likely starting to read a new protein which laks the usual > beginning.
+                // Be very strict about this condition.
+                case (/^;/.test(line) && readingSequence === true && readingHeaders === false):
+                // Case where ; sequence starts at beginning of file
+                case (/^;/.test(line) && readingSequence === false && readingHeaders === false):
+                    readingHeaders = true;
+                    readingSequence = false;
+
+                    break;
+
+                // Some sequences terminate in *. Get rid of that and update the reading sequence condition.
+                case /^[A-Z]+\*$/.test(line):
+                    readingSequence = false;
+
+                    break;
+
+                // If repetition of characters, most likely sequence
+                // IMPORTANT!!! ONLY CAPITAL LETTERS!!!!
+                case /^[A-Z]+$/.test(line):
+                    readingSequence = true;
+                    readingHeaders = false;
+
+                    break;
+
+                // If reading header and ; appears: it's a comment
+                case (/^;/.test(line) && readingSequence === false && readingHeaders === true):
+                    break;
+
+                // Something weird happened!
+                default:
+                    return false;
+            }
+        });
+
+    return true;
+};
+
 
 const extractFASTAHeaderInfo = (header) => {
 
@@ -204,6 +260,12 @@ export function fromFasta(text){
  * Promise get's rejected (aka. `catch` clause) if 5** or 4** response from server.
  */
 export function fromAccession(accession) {
+    if(accession.match(accessionNumberRegex) === null || accession.match(accessionNumberRegex) === undefined){
+        return new Promise((resolve, reject) => {
+            return reject();
+        });
+    }
+
     let url = 'https://www.ebi.ac.uk/proteins/api/proteins/' + accession;
 
     if (process.browser) {
@@ -243,21 +305,17 @@ export function fromAccession(accession) {
  *
  * @return          {Promise}   A promise that in it's `then` clause accepts an array parameter
  * which can be decomposed (`then([p,r])`:
- * (p) being an array containing Protein objects
- * (r) being an array containing sequences
- * Promise get's rejected (aka. `catch` clause) if 5** or 4** response from server.
+ * (p) being an array containing one Protein object
+ * (r) being an array containing one string representing the sequence matched
+ * Promise get's rejected (aka. `catch` clause) if parsing doesn't identify candidates
  */
 export function fromSequence(sequence) {
-    let AASequence = /(([A-Z])+\n{0,1})+/g;
-
     return new Promise((resolve, reject) => {
         let match = sequence.match(AASequence);
         if (match !== undefined && match !== null) {
             match = match.map(e => e.replace(/\n/g,""));
 
-            let proteins = match.map(e => new Protein(e));
-
-            return resolve([proteins, match]);
+            return resolve([[new Protein(match[0])], [match[0]]]);
         } else {
             return reject('No sequence identified');
         }
@@ -271,14 +329,35 @@ export function fromSequence(sequence) {
  *
  * @param           {String}    text   A string representing a FASTA sequence, an UniProt accession or a sequence in A-Z format
  *
- * @return          {Promise}   A promise that in it's `then` clause accepts an array parameter
- * which can be decomposed (`then([p,r])`:
- * (p) being an array of Protein objects
- * (r) being the raw read from the text (if
- * Promise get's rejected (aka. `catch` clause) if 5** or 4** response from server.
+ * @return          {boolean}   True if text can be parsed either as UniProt accession, AA sequence or FASTA file
+ */
+export function validInput(text) {
+    return (text.match(accessionNumberRegex) !== null && text.match(accessionNumberRegex) !== undefined) ||
+        (text.match(AASequence) !== null && text.match(AASequence) !== undefined) ||
+        validFasta(text);
+}
+
+
+/**
+ * Get Protein object from Accession number (via UniProt).
+ *
+ *
+ * @param           {String}    text   A string representing a FASTA sequence, an UniProt accession or a sequence in A-Z format
+ *
+ * @return          {function}   Returns the correct function to parse the text passed or `undefined` if text doesn't conform to any standard (AA, FASTA, UniProt Accession).
  */
 export function autodetect(text) {
-    // IF text starts with ">" it will try to FASTA parse.
-    // IF text starts with A-Z, it will look at entire text w/o spaces; IF that is still A-Z, then sequence
-    // IF text starts with A-Z
+    switch(true){
+        case (text.match(accessionNumberRegex) !== null && text.match(accessionNumberRegex) !== undefined):
+            return fromAccession;
+            break;
+        case (text.match(AASequence) !== null && text.match(AASequence) !== undefined):
+            return fromSequence;
+            break;
+        case (text.match(AASequence) !== null && text.match(AASequence) !== undefined):
+            return fromSequence;
+            break;
+        default:
+            return undefined;
+    }
 }
