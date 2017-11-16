@@ -56,18 +56,33 @@
           <div class="description"><p>Class Protein exports functions to parse specific text formats</p></div>
           <pre><code class="language-javascript">class Protein {
 
-    constructor(sequence, identifier){
+    constructor(sequence){
         this.sequence = sequence;
-        this.identifier = identifier;
         this.hash = md5(sequence);
     }
 
-    hasMapping(){
-        return false;
+    setUniprotData(uniprotData){
+        this.uniprotData = uniprotData;
     }
 
-    getUniprotMapping(){
-        return undefined;
+    retrieveUniprotData(accession){
+        let url = 'https://www.ebi.ac.uk/proteins/api/proteins/' + accession;
+        let self = this;
+
+        {
+            return new Promise((resolve, reject) =&gt; {
+                $.get(url, (protein) =&gt; {
+                    self.uniprotData = protein;
+                    resolve(protein);
+                }).fail(() =&gt; {
+                    reject();
+                });
+            });
+        }
+    }
+
+    getUniprotData(uniprotData){
+        return this.uniprotData;
     }
 }</code></pre>
           <section id="fromFasta">
@@ -113,6 +128,43 @@
     let readingSequence = false;
     let readingHeaders = false;
 
+    let extractHeaderInfo = (header) =&gt; {
+
+        // GenBank	gb|accession|locus
+        let geneBank = /gb\|\w+(\.\w+)\|.*/;
+        // EMBL Data Library	emb|accession|locus
+        // DDBJ, DNA Database of Japan	dbj|accession|locus
+        // NBRF PIR	pir||entry
+        // Protein Research Foundation	prf||name
+        // SWISS-PROT	sp|accession|entry name
+        let swissProt = /sp\|\w+\|.*/;
+        // Brookhaven Protein Data Bank	pdb|entry|chain
+        // Patents	pat|country|number
+        // GenInfo Backbone Id	bbs|number
+        // General database identifier	gnl|database|identifier
+        // NCBI Reference Sequence	ref|accession|locus
+        // Local Sequence identifier	lcl|identifier
+
+        let matchers = [geneBank, swissProt];
+
+        return matchers
+            .map(e =&gt; {
+                let current = header.match(e);
+                if (current !== undefined &amp;&amp; current !== null) {
+                    current = current[0].split(&quot;|&quot;);
+
+                    return {
+                        &quot;database&quot;: current[0],
+                        &quot;identifier&quot;: current[1],
+                        &quot;locus&quot;: current[2]
+                    };
+                } else {
+                    return undefined;
+                }
+            })
+            .filter(e =&gt; e !== undefined);
+    };
+
     text
     // Split line by line
         .split(&quot;\n&quot;)
@@ -131,6 +183,7 @@
                 case (/^;/.test(line) &amp;&amp; readingSequence === false &amp;&amp; readingHeaders === false):
                     sequences.push({
                         header: line.substring(1, line.length),
+                        headerInfo: extractHeaderInfo(line),
                         sequence: '',
                         comments: ''
                     });
@@ -210,7 +263,10 @@
     {
         return new Promise((resolve, reject) =&gt; {
             $.get(url, (protein) =&gt; {
-                resolve([new Protein(protein.sequence.sequence, accession), protein]);
+                let p = new Protein(protein.sequence.sequence);
+                p.setUniprotData(protein);
+
+                resolve([p, protein]);
             }).fail(() =&gt; {
                 reject();
             });
