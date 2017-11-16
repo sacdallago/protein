@@ -106,7 +106,12 @@ export class Protein {
  *
  *
  * @param       {String}    text    A string representing the FASTA input
- * @return      {Array}     An array of the form [[Prtoein],[raw_fasta_parsing]], which can be decomposed as needed
+ * @return      {Promise}   A promise that in it's `then` clause accepts an array parameter
+ * which can be decomposed (`then([p,r])`:
+ * (p) being an array of Protein objects
+ * (r) being an array containing the raw FASTA sequences parsed
+ * Promise get's rejected (aka. `catch` clause) if some parsing error occurs.
+ *
  */
 export function fromFasta(text){
     if(typeof text !== 'string'){
@@ -190,15 +195,15 @@ export function fromFasta(text){
  * Get Protein object from Accession number (via UniProt).
  *
  *
- * @param           {String}    accession   A string representing the uniprot accession number (eg.: P12345)
+ * @param           {String}    accession   A string representing the UniProt accession number (eg.: P12345)
  *
  * @return          {Promise}   A promise that in it's `then` clause accepts an array parameter
  * which can be decomposed (`then([p,r])`:
- * (p) being a Protein object and the second
- * (r) being the raw GET result from uniprot
+ * (p) being an array containing one Protein object
+ * (r) being an array containing one entry, aka. the raw GET result from UniProt
  * Promise get's rejected (aka. `catch` clause) if 5** or 4** response from server.
  */
-export function byAccession(accession) {
+export function fromAccession(accession) {
     let url = 'https://www.ebi.ac.uk/proteins/api/proteins/' + accession;
 
     if (process.browser) {
@@ -207,7 +212,7 @@ export function byAccession(accession) {
                 let p = new Protein(protein.sequence.sequence);
                 p.setUniprotData(protein);
 
-                return resolve([p, protein]);
+                return resolve([[p], [protein]]);
             }).fail(() => {
                 return reject();
             });
@@ -223,11 +228,40 @@ export function byAccession(accession) {
                         let p = new Protein(protein.sequence.sequence);
                         p.setUniprotData(protein);
 
-                        return resolve([p, protein]);
+                        return resolve([[p], [protein]]);
                     }
                 })
         });
     }
+}
+
+/**
+ * Get Protein object from A-Z sequence
+ *
+ *
+ * @param           {String}    sequence   A string representing a protein sequence (A-Z)
+ *
+ * @return          {Promise}   A promise that in it's `then` clause accepts an array parameter
+ * which can be decomposed (`then([p,r])`:
+ * (p) being an array containing Protein objects
+ * (r) being an array containing sequences
+ * Promise get's rejected (aka. `catch` clause) if 5** or 4** response from server.
+ */
+export function fromSequence(sequence) {
+    let AASequence = /(([A-Z])+\n{0,1})+/g;
+
+    return new Promise((resolve, reject) => {
+        let match = sequence.match(AASequence);
+        if (match !== undefined && match !== null) {
+            match = match.map(e => e.replace(/\n/g,""));
+
+            let proteins = match.map(e => new Protein(e));
+
+            return resolve([proteins, match]);
+        } else {
+            return reject('No sequence identified');
+        }
+    });
 }
 
 // TODO: auto detect input
@@ -235,12 +269,12 @@ export function byAccession(accession) {
  * Get Protein object from Accession number (via UniProt).
  *
  *
- * @param           {String}    accession   A string representing the uniprot accession number (eg.: P12345)
+ * @param           {String}    text   A string representing a FASTA sequence, an UniProt accession or a sequence in A-Z format
  *
  * @return          {Promise}   A promise that in it's `then` clause accepts an array parameter
  * which can be decomposed (`then([p,r])`:
- * (p) being a Protein object and the second
- * (r) being the raw GET result from uniprot
+ * (p) being an array of Protein objects
+ * (r) being the raw read from the text (if
  * Promise get's rejected (aka. `catch` clause) if 5** or 4** response from server.
  */
 export function autodetect(text) {

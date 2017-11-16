@@ -35,6 +35,36 @@ DAKGMATIDSNLEWVRLAQRVPVRIRLDEQQGNLWPAGTTATVVITGKQDRDASQDSFFR
 KLAHRLREFG
     `;
 
+let AASequences = `MKTLTRKLSRTAITLVLVILAFIAIFRAWVYYTESPWTRDARFSADVVAIAPDVAGLITH
+VNVHDNQLVKKDQVLFTIDQPRYQKALAEAEADVAYYQVLAQEKRQEAGRRNRLGVQAMS
+REEIDQANNVLQTVLHQLAKAQATRDLAKLDLERTVIRAPADGWVTNLNVYAGEFITRGS
+TAVALVKKNSFYVQAYMEETKLEGVRPGYRAEITPLGSNRVLKGTVDSVAAGVTNASSTS
+DAKGMATIDSNLEWVRLAQRVPVRIRLDEQQGNLWPAGTTATVVITGKQDRDASQDSFFR
+KLAHRLREFG
+
+verkejrbjehb
+
+
+TAVALVKKNSFYVQAYMEETKLEGVRPGYRAEITPLGSNRVLKGTVDSVAAGVTNASSTSREEIDQANNVLQTVLHQLAKAQATRDLAKLDLERTVIRAPADGWVTNLNVYAGEFITRGS
+
+
+FRAWVYYTESPWTRDARFSADVVAIAPDVAGLITHVNVHDNQLVKKDQVLFTIDQPRYQKALAEAEADVAYYQVLAQEKRQEAGRRNRLGVQAMS
+
+
+rervbervjberkjvberverv`;
+
+
+Protein.fromSequence(AASequences)
+    .then(([proteins, raw]) => {
+        console.log("-----------SEQUENCES-----------");
+        console.log(proteins);
+        console.log("-----------SEQUENCES-----------");
+    })
+    .catch(() => {
+        console.error("Could not parse sequences");
+    });
+
+
 Protein.fromFasta(fasta)
     .then(([proteins, parsedFasta]) => {
         console.log("-----------FROM-FASTA-----------");
@@ -60,7 +90,7 @@ Protein.fromFasta(fasta)
         console.error("could not GET protein by accession");
     });
 
-Protein.byAccession("P12345")
+Protein.fromAccession("P12345")
     .then(([protein, raw]) => {
         console.log("-----------API-ACCESSION-----------");
         console.log(protein);
