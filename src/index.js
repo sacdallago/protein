@@ -16,6 +16,12 @@ const accessionNumberRegex = /^[OPQ][0-9][A-Z0-9]{3}[0-9]|[A-NR-Z][0-9]([A-Z][A-
 const AASequence = /^(([A-Z])+\n{0,1})+$/;
 
 const validFasta = (fasta) => {
+
+    /** TODO: Must make this parser a bit stricter.
+     * As of now: everything is OKeyed that falls even slightly into the category
+     * also [a-z] and whitespaces are matched --> maybe don't return before end of forEach?
+     **/
+
     fasta
     // Split line by line
         .split("\n")
