@@ -139,7 +139,7 @@ const accessionNumberRegex = /^[OPQ][0-9][A-Z0-9]{3}[0-9]|[A-NR-Z][0-9]([A-Z][A-
 const AASequence = /^(([A-Z])+\n{0,1})+$/;
 
 const validFasta = fasta => {
-    text
+    fasta
     // Split line by line
     .split("\n")
     // Get rid of lines only containing spaces or tabs (or nothing)
