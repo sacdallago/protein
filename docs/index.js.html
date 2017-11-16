@@ -40,9 +40,13 @@
               </li>
               <li><a href="#fromFasta"><i class="alert alert-info"></i><span>fromFasta</span></a>
               </li>
-              <li><a href="#byAccession"><i class="alert alert-info"></i><span>byAccession</span></a>
+              <li><a href="#fromAccession"><i class="alert alert-info"></i><span>fromAccession</span></a>
               </li>
-              <li><a href="#getProteins"><i class="alert alert-info"></i><span>getProteins</span></a>
+              <li><a href="#fromSequence"><i class="alert alert-info"></i><span>fromSequence</span></a>
+              </li>
+              <li><a href="#validInput"><i class="alert alert-info"></i><span>validInput</span></a>
+              </li>
+              <li><a href="#autodetect"><i class="alert alert-info"></i><span>autodetect</span></a>
               </li>
             </ul>
           </div>
@@ -115,8 +119,8 @@
               </tr>
               <tr>
                 <td>return</td>
-                <td>Array</td>
-                <td><p>An array of the form [[Prtoein],[raw_fasta_parsing]], which can be decomposed as needed</p></td>
+                <td>Promise</td>
+                <td><p>A promise that in it&#39;s <code>then</code> clause accepts an array parameter which can be decomposed (<code>then([p,r])</code>:<br />(p) being an array of Protein objects<br />(r) being an array containing the raw FASTA sequences parsed<br />Promise get&#39;s rejected (aka. <code>catch</code> clause) if some parsing error occurs.</p></td>
               </tr>
             </tbody>
           </table>
@@ -135,111 +139,74 @@
     let readingSequence = false;
     let readingHeaders = false;
 
-    let extractHeaderInfo = (header) =&gt; {
+    return new Promise((resolve, reject) =&gt; {
+        text
+        // Split line by line
+            .split(&quot;\n&quot;)
+            // Get rid of lines only containing spaces or tabs (or nothing)
+            .filter(s =&gt; s.replace(/[\s|\t]+/,'').length &gt; 0)
+            // Perform switch on line output
+            .forEach((line) =&gt; {
+                switch(true){
+                    // Marks beginning of sequence in common FASTA file
+                    case /^&gt;/.test(line):
+                    // Comments can only appear in header. If ; appears while reading a sequence,
+                    // am most likely starting to read a new protein which laks the usual &gt; beginning.
+                    // Be very strict about this condition.
+                    case (/^;/.test(line) &amp;&amp; readingSequence === true &amp;&amp; readingHeaders === false):
+                    // Case where ; sequence starts at beginning of file
+                    case (/^;/.test(line) &amp;&amp; readingSequence === false &amp;&amp; readingHeaders === false):
+                        sequences.push({
+                            header: line.substring(1, line.length),
+                            headerInfo: extractFASTAHeaderInfo(line),
+                            sequence: '',
+                            comments: ''
+                        });
 
-        // GenBank	gb|accession|locus
-        let geneBank = /gb\|\w+(\.\w+)\|.*/;
-        // EMBL Data Library	emb|accession|locus
-        // DDBJ, DNA Database of Japan	dbj|accession|locus
-        // NBRF PIR	pir||entry
-        // Protein Research Foundation	prf||name
-        // SWISS-PROT	sp|accession|entry name
-        let swissProt = /sp\|\w+\|.*/;
-        // Brookhaven Protein Data Bank	pdb|entry|chain
-        // Patents	pat|country|number
-        // GenInfo Backbone Id	bbs|number
-        // General database identifier	gnl|database|identifier
-        // NCBI Reference Sequence	ref|accession|locus
-        // Local Sequence identifier	lcl|identifier
+                        readingHeaders = true;
+                        readingSequence = false;
 
-        let matchers = [geneBank, swissProt];
+                        break;
 
-        return matchers
-            .map(e =&gt; {
-                let current = header.match(e);
-                if (current !== undefined &amp;&amp; current !== null) {
-                    current = current[0].split(&quot;|&quot;);
+                    // Some sequences terminate in *. Get rid of that and update the reading sequence condition.
+                    case /^[A-Z]+\*$/.test(line):
+                        sequences[sequences.length-1].sequence += line.substring(1, line.length-1);
 
-                    return {
-                        &quot;database&quot;: current[0],
-                        &quot;identifier&quot;: current[1],
-                        &quot;locus&quot;: current[2]
-                    };
-                } else {
-                    return undefined;
+                        readingSequence = false;
+
+                        break;
+
+                    // If repetition of characters, most likely sequence
+                    // IMPORTANT!!! ONLY CAPITAL LETTERS!!!!
+                    case /^[A-Z]+$/.test(line):
+                        sequences[sequences.length-1].sequence += line;
+
+                        readingSequence = true;
+                        readingHeaders = false;
+
+                        break;
+
+                    // If reading header and ; appears: it's a comment
+                    case (/^;/.test(line) &amp;&amp; readingSequence === false &amp;&amp; readingHeaders === true):
+                        sequences[sequences.length-1].comments += line.substring(1, line.length) + ' ';
+                        break;
+
+                    // Something weird happened!
+                    default:
+                        return reject(&quot;Could not parse one line of FASTA input:\n\n&quot; + line);
                 }
-            })
-            .filter(e =&gt; e !== undefined);
-    };
+            });
 
-    text
-    // Split line by line
-        .split(&quot;\n&quot;)
-        // Get rid of lines only containing spaces or tabs (or nothing)
-        .filter(s =&gt; s.replace(/[\s|\t]+/,'').length &gt; 0)
-        // Perform switch on line output
-        .forEach((line) =&gt; {
-            switch(true){
-                // Marks beginning of sequence in common FASTA file
-                case /^&gt;/.test(line):
-                // Comments can only appear in header. If ; appears while reading a sequence,
-                // am most likely starting to read a new protein which laks the usual &gt; beginning.
-                // Be very strict about this condition.
-                case (/^;/.test(line) &amp;&amp; readingSequence === true &amp;&amp; readingHeaders === false):
-                // Case where ; sequence starts at beginning of file
-                case (/^;/.test(line) &amp;&amp; readingSequence === false &amp;&amp; readingHeaders === false):
-                    sequences.push({
-                        header: line.substring(1, line.length),
-                        headerInfo: extractHeaderInfo(line),
-                        sequence: '',
-                        comments: ''
-                    });
-
-                    readingHeaders = true;
-                    readingSequence = false;
-
-                    break;
-
-                // Some sequences terminate in *. Get rid of that and update the reading sequence condition.
-                case /^[A-Z]+\*$/.test(line):
-                    sequences[sequences.length-1].sequence += line.substring(1, line.length-1);
-
-                    readingSequence = false;
-
-                    break;
-
-                // If repetition of characters, most likely sequence
-                // IMPORTANT!!! ONLY CAPITAL LETTERS!!!!
-                case /^[A-Z]+$/.test(line):
-                    sequences[sequences.length-1].sequence += line;
-
-                    readingSequence = true;
-                    readingHeaders = false;
-
-                    break;
-
-                // If reading header and ; appears: it's a comment
-                case (/^;/.test(line) &amp;&amp; readingSequence === false &amp;&amp; readingHeaders === true):
-                    sequences[sequences.length-1].comments += line.substring(1, line.length) + ' ';
-                    break;
-
-                // Something weird happened!
-                default:
-                    console.error(&quot;Don't know what to do with line: &quot; + line);
-                    throw (&quot;Could not parse one line of FASTA input&quot;);
-                    break;
-            }
-        });
-
-    return [sequences.map(s =&gt; {
-        return new Protein(s.sequence);
-    }),sequences];
+        return resolve([sequences.map(s =&gt; {
+            return new Protein(s.sequence);
+        }),sequences]);
+    });
 }</code></pre>
-          <section id="byAccession">
-            <h1>byAccession</h1>
+          <section id="fromAccession">
+            <h1>fromAccession</h1>
             <h5 class="subheader"></h5>
             <p>
-              <div class="label label-info radius ctx-type">function</div><span>&nbsp;</span><span>byAccession()</span><span>&nbsp;</span>
+              <div class="label label-info radius ctx-type">function</div><span>&nbsp;</span><span>fromAccession()</span><span>&nbsp;</span>
             </p>
           </section>
           <table class="table table-bordered table-striped">
@@ -254,17 +221,23 @@
               <tr>
                 <td>accession</td>
                 <td>String</td>
-                <td><p>A string representing the uniprot accession number (eg.: P12345)</p></td>
+                <td><p>A string representing the UniProt accession number (eg.: P12345)</p></td>
               </tr>
               <tr>
                 <td>return</td>
                 <td>Promise</td>
-                <td><p>A promise that in it&#39;s <code>then</code> clause accepts an array parameter which can be decomposed (<code>then([p,r])</code>:<br />(p) being a Protein object and the second<br />(r) being the raw GET result from uniprot<br />Promise get&#39;s rejected (aka. <code>catch</code> clause) if 5<strong> or 4</strong> response from server.</p></td>
+                <td><p>A promise that in it&#39;s <code>then</code> clause accepts an array parameter which can be decomposed (<code>then([p,r])</code>:<br />(p) being an array containing one Protein object<br />(r) being an array containing one entry, aka. the raw GET result from UniProt<br />Promise get&#39;s rejected (aka. <code>catch</code> clause) if 5<strong> or 4</strong> response from server.</p></td>
               </tr>
             </tbody>
           </table>
           <div class="description"><p>Get Protein object from Accession number (via UniProt).</p></div>
-          <pre><code class="language-javascript">function byAccession(accession) {
+          <pre><code class="language-javascript">function fromAccession(accession) {
+    if(accession.match(accessionNumberRegex) === null || accession.match(accessionNumberRegex) === undefined){
+        return new Promise((resolve, reject) =&gt; {
+            return reject();
+        });
+    }
+
     let url = 'https://www.ebi.ac.uk/proteins/api/proteins/' + accession;
 
     {
@@ -272,25 +245,23 @@
             request
                 .get(url, (error, response, body) =&gt; {
                     if(error){
-                        reject(error);
+                        return reject(error);
                     } else {
                         let protein = JSON.parse(body);
                         let p = new Protein(protein.sequence.sequence);
                         p.setUniprotData(protein);
 
-                        resolve([p, protein]);
+                        return resolve([[p], [protein]]);
                     }
                 });
         });
     }
-}
-
-// TODO: auto detect input</code></pre>
-          <section id="getProteins">
-            <h1>getProteins</h1>
+}</code></pre>
+          <section id="fromSequence">
+            <h1>fromSequence</h1>
             <h5 class="subheader"></h5>
             <p>
-              <div class="label label-info radius ctx-type">function</div><span>&nbsp;</span><span>getProteins()</span><span>&nbsp;</span>
+              <div class="label label-info radius ctx-type">function</div><span>&nbsp;</span><span>fromSequence()</span><span>&nbsp;</span>
             </p>
           </section>
           <table class="table table-bordered table-striped">
@@ -303,26 +274,117 @@
             </thead>
             <tbody>
               <tr>
-                <td>accession</td>
+                <td>sequence</td>
                 <td>String</td>
-                <td><p>A string representing the uniprot accession number (eg.: P12345)</p></td>
+                <td><p>A string representing a protein sequence (A-Z)</p></td>
               </tr>
               <tr>
                 <td>return</td>
                 <td>Promise</td>
-                <td><p>A promise that in it&#39;s <code>then</code> clause accepts an array parameter which can be decomposed (<code>then([p,r])</code>:<br />(p) being a Protein object and the second<br />(r) being the raw GET result from uniprot<br />Promise get&#39;s rejected (aka. <code>catch</code> clause) if 5<strong> or 4</strong> response from server.</p></td>
+                <td><p>A promise that in it&#39;s <code>then</code> clause accepts an array parameter which can be decomposed (<code>then([p,r])</code>:<br />(p) being an array containing one Protein object<br />(r) being an array containing one string representing the sequence matched<br />Promise get&#39;s rejected (aka. <code>catch</code> clause) if parsing doesn&#39;t identify candidates</p></td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="description"><p>Get Protein object from A-Z sequence</p></div>
+          <pre><code class="language-javascript">function fromSequence(sequence) {
+    return new Promise((resolve, reject) =&gt; {
+        let match = sequence.match(AASequence);
+        if (match !== undefined &amp;&amp; match !== null) {
+            match = match.map(e =&gt; e.replace(/\n/g,&quot;&quot;));
+
+            return resolve([[new Protein(match[0])], [match[0]]]);
+        } else {
+            return reject('No sequence identified');
+        }
+    });
+}
+
+// TODO: auto detect input</code></pre>
+          <section id="validInput">
+            <h1>validInput</h1>
+            <h5 class="subheader"></h5>
+            <p>
+              <div class="label label-info radius ctx-type">function</div><span>&nbsp;</span><span>validInput()</span><span>&nbsp;</span>
+            </p>
+          </section>
+          <table class="table table-bordered table-striped">
+            <thead>
+              <tr>
+                <th style="width:20%">Option name</th>
+                <th style="width:20%">Type</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>text</td>
+                <td>String</td>
+                <td><p>A string representing a FASTA sequence, an UniProt accession or a sequence in A-Z format</p></td>
+              </tr>
+              <tr>
+                <td>return</td>
+                <td>boolean</td>
+                <td><p>True if text can be parsed either as UniProt accession, AA sequence or FASTA file</p></td>
               </tr>
             </tbody>
           </table>
           <div class="description"><p>Get Protein object from Accession number (via UniProt).</p></div>
-          <pre><code class="language-javascript">function getProteins(text) {
-
+          <pre><code class="language-javascript">function validInput(text) {
+    return (text.match(accessionNumberRegex) !== null &amp;&amp; text.match(accessionNumberRegex) !== undefined) ||
+        (text.match(AASequence) !== null &amp;&amp; text.match(AASequence) !== undefined) ||
+        validFasta(text);
+}</code></pre>
+          <section id="autodetect">
+            <h1>autodetect</h1>
+            <h5 class="subheader"></h5>
+            <p>
+              <div class="label label-info radius ctx-type">function</div><span>&nbsp;</span><span>autodetect()</span><span>&nbsp;</span>
+            </p>
+          </section>
+          <table class="table table-bordered table-striped">
+            <thead>
+              <tr>
+                <th style="width:20%">Option name</th>
+                <th style="width:20%">Type</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>text</td>
+                <td>String</td>
+                <td><p>A string representing a FASTA sequence, an UniProt accession or a sequence in A-Z format</p></td>
+              </tr>
+              <tr>
+                <td>return</td>
+                <td>function</td>
+                <td><p>Returns the correct function to parse the text passed or <code>undefined</code> if text doesn&#39;t conform to any standard (AA, FASTA, UniProt Accession).</p></td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="description"><p>Get Protein object from Accession number (via UniProt).</p></div>
+          <pre><code class="language-javascript">function autodetect(text) {
+    switch(true){
+        case (text.match(accessionNumberRegex) !== null &amp;&amp; text.match(accessionNumberRegex) !== undefined):
+            return fromAccession;
+            break;
+        case (text.match(AASequence) !== null &amp;&amp; text.match(AASequence) !== undefined):
+            return fromSequence;
+            break;
+        case (text.match(AASequence) !== null &amp;&amp; text.match(AASequence) !== undefined):
+            return fromSequence;
+            break;
+        default:
+            return undefined;
+    }
 }
 
 exports.Protein = Protein;
 exports.fromFasta = fromFasta;
-exports.byAccession = byAccession;
-exports.getProteins = getProteins;</code></pre>
+exports.fromAccession = fromAccession;
+exports.fromSequence = fromSequence;
+exports.validInput = validInput;
+exports.autodetect = autodetect;</code></pre>
         </div>
       </div>
     </div>

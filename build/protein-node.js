@@ -16939,6 +16939,100 @@ let request;
     request = __webpack_require__(92);
 }
 
+// Private functions and constants
+// From http://www.uniprot.org/help/accession_numbers
+const accessionNumberRegex = /^[OPQ][0-9][A-Z0-9]{3}[0-9]|[A-NR-Z][0-9]([A-Z][A-Z0-9]{2}[0-9]){1,2}$/;
+
+const AASequence = /^(([A-Z])+\n{0,1})+$/;
+
+const validFasta = fasta => {
+    text
+    // Split line by line
+    .split("\n")
+    // Get rid of lines only containing spaces or tabs (or nothing)
+    .filter(s => s.replace(/[\s|\t]+/, '').length > 0)
+    // Perform switch on line output
+    .forEach(line => {
+        // this flag get's updated when I'm reading a sequence. No comments should appear when I'm reading a sequence (see switch).
+        let readingSequence = false;
+        let readingHeaders = false;
+
+        switch (true) {
+            // Marks beginning of sequence in common FASTA file
+            case /^>/.test(line):
+            // Comments can only appear in header. If ; appears while reading a sequence,
+            // am most likely starting to read a new protein which laks the usual > beginning.
+            // Be very strict about this condition.
+            case /^;/.test(line) && readingSequence === true && readingHeaders === false:
+            // Case where ; sequence starts at beginning of file
+            case /^;/.test(line) && readingSequence === false && readingHeaders === false:
+                readingHeaders = true;
+                readingSequence = false;
+
+                break;
+
+            // Some sequences terminate in *. Get rid of that and update the reading sequence condition.
+            case /^[A-Z]+\*$/.test(line):
+                readingSequence = false;
+
+                break;
+
+            // If repetition of characters, most likely sequence
+            // IMPORTANT!!! ONLY CAPITAL LETTERS!!!!
+            case /^[A-Z]+$/.test(line):
+                readingSequence = true;
+                readingHeaders = false;
+
+                break;
+
+            // If reading header and ; appears: it's a comment
+            case /^;/.test(line) && readingSequence === false && readingHeaders === true:
+                break;
+
+            // Something weird happened!
+            default:
+                return false;
+        }
+    });
+
+    return true;
+};
+
+const extractFASTAHeaderInfo = header => {
+
+    // GenBank	gb|accession|locus
+    let geneBank = /gb\|\w+(\.\w+)\|.*/;
+    // EMBL Data Library	emb|accession|locus
+    // DDBJ, DNA Database of Japan	dbj|accession|locus
+    // NBRF PIR	pir||entry
+    // Protein Research Foundation	prf||name
+    // SWISS-PROT	sp|accession|entry name
+    let swissProt = /sp\|\w+\|.*/;
+    // Brookhaven Protein Data Bank	pdb|entry|chain
+    // Patents	pat|country|number
+    // GenInfo Backbone Id	bbs|number
+    // General database identifier	gnl|database|identifier
+    // NCBI Reference Sequence	ref|accession|locus
+    // Local Sequence identifier	lcl|identifier
+
+    let matchers = [geneBank, swissProt];
+
+    return matchers.map(e => {
+        let current = header.match(e);
+        if (current !== undefined && current !== null) {
+            current = current[0].split("|");
+
+            return {
+                "database": current[0],
+                "identifier": current[1],
+                "locus": current[2]
+            };
+        } else {
+            return undefined;
+        }
+    }).filter(e => e !== undefined);
+};
+
 /**
  * Class Protein exports functions to parse specific text formats
  */
@@ -16983,7 +17077,12 @@ class Protein {
  *
  *
  * @param       {String}    text    A string representing the FASTA input
- * @return      {Array}     An array of the form [[Prtoein],[raw_fasta_parsing]], which can be decomposed as needed
+ * @return      {Promise}   A promise that in it's `then` clause accepts an array parameter
+ * which can be decomposed (`then([p,r])`:
+ * (p) being an array of Protein objects
+ * (r) being an array containing the raw FASTA sequences parsed
+ * Promise get's rejected (aka. `catch` clause) if some parsing error occurs.
+ *
  */
 function fromFasta(text) {
     if (typeof text !== 'string') {
@@ -16998,135 +17097,131 @@ function fromFasta(text) {
     let readingSequence = false;
     let readingHeaders = false;
 
-    let extractHeaderInfo = header => {
+    return new Promise((resolve, reject) => {
+        text
+        // Split line by line
+        .split("\n")
+        // Get rid of lines only containing spaces or tabs (or nothing)
+        .filter(s => s.replace(/[\s|\t]+/, '').length > 0)
+        // Perform switch on line output
+        .forEach(line => {
+            switch (true) {
+                // Marks beginning of sequence in common FASTA file
+                case /^>/.test(line):
+                // Comments can only appear in header. If ; appears while reading a sequence,
+                // am most likely starting to read a new protein which laks the usual > beginning.
+                // Be very strict about this condition.
+                case /^;/.test(line) && readingSequence === true && readingHeaders === false:
+                // Case where ; sequence starts at beginning of file
+                case /^;/.test(line) && readingSequence === false && readingHeaders === false:
+                    sequences.push({
+                        header: line.substring(1, line.length),
+                        headerInfo: extractFASTAHeaderInfo(line),
+                        sequence: '',
+                        comments: ''
+                    });
 
-        // GenBank	gb|accession|locus
-        let geneBank = /gb\|\w+(\.\w+)\|.*/;
-        // EMBL Data Library	emb|accession|locus
-        // DDBJ, DNA Database of Japan	dbj|accession|locus
-        // NBRF PIR	pir||entry
-        // Protein Research Foundation	prf||name
-        // SWISS-PROT	sp|accession|entry name
-        let swissProt = /sp\|\w+\|.*/;
-        // Brookhaven Protein Data Bank	pdb|entry|chain
-        // Patents	pat|country|number
-        // GenInfo Backbone Id	bbs|number
-        // General database identifier	gnl|database|identifier
-        // NCBI Reference Sequence	ref|accession|locus
-        // Local Sequence identifier	lcl|identifier
+                    readingHeaders = true;
+                    readingSequence = false;
 
-        let matchers = [geneBank, swissProt];
+                    break;
 
-        return matchers.map(e => {
-            let current = header.match(e);
-            if (current !== undefined && current !== null) {
-                current = current[0].split("|");
+                // Some sequences terminate in *. Get rid of that and update the reading sequence condition.
+                case /^[A-Z]+\*$/.test(line):
+                    sequences[sequences.length - 1].sequence += line.substring(1, line.length - 1);
 
-                return {
-                    "database": current[0],
-                    "identifier": current[1],
-                    "locus": current[2]
-                };
-            } else {
-                return undefined;
+                    readingSequence = false;
+
+                    break;
+
+                // If repetition of characters, most likely sequence
+                // IMPORTANT!!! ONLY CAPITAL LETTERS!!!!
+                case /^[A-Z]+$/.test(line):
+                    sequences[sequences.length - 1].sequence += line;
+
+                    readingSequence = true;
+                    readingHeaders = false;
+
+                    break;
+
+                // If reading header and ; appears: it's a comment
+                case /^;/.test(line) && readingSequence === false && readingHeaders === true:
+                    sequences[sequences.length - 1].comments += line.substring(1, line.length) + ' ';
+                    break;
+
+                // Something weird happened!
+                default:
+                    return reject("Could not parse one line of FASTA input:\n\n" + line);
             }
-        }).filter(e => e !== undefined);
-    };
+        });
 
-    text
-    // Split line by line
-    .split("\n")
-    // Get rid of lines only containing spaces or tabs (or nothing)
-    .filter(s => s.replace(/[\s|\t]+/, '').length > 0)
-    // Perform switch on line output
-    .forEach(line => {
-        switch (true) {
-            // Marks beginning of sequence in common FASTA file
-            case /^>/.test(line):
-            // Comments can only appear in header. If ; appears while reading a sequence,
-            // am most likely starting to read a new protein which laks the usual > beginning.
-            // Be very strict about this condition.
-            case /^;/.test(line) && readingSequence === true && readingHeaders === false:
-            // Case where ; sequence starts at beginning of file
-            case /^;/.test(line) && readingSequence === false && readingHeaders === false:
-                sequences.push({
-                    header: line.substring(1, line.length),
-                    headerInfo: extractHeaderInfo(line),
-                    sequence: '',
-                    comments: ''
-                });
-
-                readingHeaders = true;
-                readingSequence = false;
-
-                break;
-
-            // Some sequences terminate in *. Get rid of that and update the reading sequence condition.
-            case /^[A-Z]+\*$/.test(line):
-                sequences[sequences.length - 1].sequence += line.substring(1, line.length - 1);
-
-                readingSequence = false;
-
-                break;
-
-            // If repetition of characters, most likely sequence
-            // IMPORTANT!!! ONLY CAPITAL LETTERS!!!!
-            case /^[A-Z]+$/.test(line):
-                sequences[sequences.length - 1].sequence += line;
-
-                readingSequence = true;
-                readingHeaders = false;
-
-                break;
-
-            // If reading header and ; appears: it's a comment
-            case /^;/.test(line) && readingSequence === false && readingHeaders === true:
-                sequences[sequences.length - 1].comments += line.substring(1, line.length) + ' ';
-                break;
-
-            // Something weird happened!
-            default:
-                console.error("Don't know what to do with line: " + line);
-                throw "Could not parse one line of FASTA input";
-                break;
-        }
+        return resolve([sequences.map(s => {
+            return new Protein(s.sequence);
+        }), sequences]);
     });
-
-    return [sequences.map(s => {
-        return new Protein(s.sequence);
-    }), sequences];
 }
 
 /**
  * Get Protein object from Accession number (via UniProt).
  *
  *
- * @param           {String}    accession   A string representing the uniprot accession number (eg.: P12345)
+ * @param           {String}    accession   A string representing the UniProt accession number (eg.: P12345)
  *
  * @return          {Promise}   A promise that in it's `then` clause accepts an array parameter
  * which can be decomposed (`then([p,r])`:
- * (p) being a Protein object and the second
- * (r) being the raw GET result from uniprot
+ * (p) being an array containing one Protein object
+ * (r) being an array containing one entry, aka. the raw GET result from UniProt
  * Promise get's rejected (aka. `catch` clause) if 5** or 4** response from server.
  */
-function byAccession(accession) {
+function fromAccession(accession) {
+    if (accession.match(accessionNumberRegex) === null || accession.match(accessionNumberRegex) === undefined) {
+        return new Promise((resolve, reject) => {
+            return reject();
+        });
+    }
+
     let url = 'https://www.ebi.ac.uk/proteins/api/proteins/' + accession;
 
     {
         return new Promise((resolve, reject) => {
             request.get(url, (error, response, body) => {
                 if (error) {
-                    reject(error);
+                    return reject(error);
                 } else {
                     let protein = JSON.parse(body);
                     let p = new Protein(protein.sequence.sequence);
                     p.setUniprotData(protein);
 
-                    resolve([p, protein]);
+                    return resolve([[p], [protein]]);
                 }
             });
         });
     }
+}
+
+/**
+ * Get Protein object from A-Z sequence
+ *
+ *
+ * @param           {String}    sequence   A string representing a protein sequence (A-Z)
+ *
+ * @return          {Promise}   A promise that in it's `then` clause accepts an array parameter
+ * which can be decomposed (`then([p,r])`:
+ * (p) being an array containing one Protein object
+ * (r) being an array containing one string representing the sequence matched
+ * Promise get's rejected (aka. `catch` clause) if parsing doesn't identify candidates
+ */
+function fromSequence(sequence) {
+    return new Promise((resolve, reject) => {
+        let match = sequence.match(AASequence);
+        if (match !== undefined && match !== null) {
+            match = match.map(e => e.replace(/\n/g, ""));
+
+            return resolve([[new Protein(match[0])], [match[0]]]);
+        } else {
+            return reject('No sequence identified');
+        }
+    });
 }
 
 // TODO: auto detect input
@@ -17134,20 +17229,44 @@ function byAccession(accession) {
  * Get Protein object from Accession number (via UniProt).
  *
  *
- * @param           {String}    accession   A string representing the uniprot accession number (eg.: P12345)
+ * @param           {String}    text   A string representing a FASTA sequence, an UniProt accession or a sequence in A-Z format
  *
- * @return          {Promise}   A promise that in it's `then` clause accepts an array parameter
- * which can be decomposed (`then([p,r])`:
- * (p) being a Protein object and the second
- * (r) being the raw GET result from uniprot
- * Promise get's rejected (aka. `catch` clause) if 5** or 4** response from server.
+ * @return          {boolean}   True if text can be parsed either as UniProt accession, AA sequence or FASTA file
  */
-function getProteins(text) {}
+function validInput(text) {
+    return text.match(accessionNumberRegex) !== null && text.match(accessionNumberRegex) !== undefined || text.match(AASequence) !== null && text.match(AASequence) !== undefined || validFasta(text);
+}
+
+/**
+ * Get Protein object from Accession number (via UniProt).
+ *
+ *
+ * @param           {String}    text   A string representing a FASTA sequence, an UniProt accession or a sequence in A-Z format
+ *
+ * @return          {function}   Returns the correct function to parse the text passed or `undefined` if text doesn't conform to any standard (AA, FASTA, UniProt Accession).
+ */
+function autodetect(text) {
+    switch (true) {
+        case text.match(accessionNumberRegex) !== null && text.match(accessionNumberRegex) !== undefined:
+            return fromAccession;
+            break;
+        case text.match(AASequence) !== null && text.match(AASequence) !== undefined:
+            return fromSequence;
+            break;
+        case text.match(AASequence) !== null && text.match(AASequence) !== undefined:
+            return fromSequence;
+            break;
+        default:
+            return undefined;
+    }
+}
 
 exports.Protein = Protein;
 exports.fromFasta = fromFasta;
-exports.byAccession = byAccession;
-exports.getProteins = getProteins;
+exports.fromAccession = fromAccession;
+exports.fromSequence = fromSequence;
+exports.validInput = validInput;
+exports.autodetect = autodetect;
 
 /***/ }),
 /* 89 */
