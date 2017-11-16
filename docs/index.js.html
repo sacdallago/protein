@@ -42,6 +42,8 @@
               </li>
               <li><a href="#byAccession"><i class="alert alert-info"></i><span>byAccession</span></a>
               </li>
+              <li><a href="#getProteins"><i class="alert alert-info"></i><span>getProteins</span></a>
+              </li>
             </ul>
           </div>
         </div>
@@ -283,9 +285,44 @@
     }
 }
 
+// TODO: auto detect input</code></pre>
+          <section id="getProteins">
+            <h1>getProteins</h1>
+            <h5 class="subheader"></h5>
+            <p>
+              <div class="label label-info radius ctx-type">function</div><span>&nbsp;</span><span>getProteins()</span><span>&nbsp;</span>
+            </p>
+          </section>
+          <table class="table table-bordered table-striped">
+            <thead>
+              <tr>
+                <th style="width:20%">Option name</th>
+                <th style="width:20%">Type</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>accession</td>
+                <td>String</td>
+                <td><p>A string representing the uniprot accession number (eg.: P12345)</p></td>
+              </tr>
+              <tr>
+                <td>return</td>
+                <td>Promise</td>
+                <td><p>A promise that in it&#39;s <code>then</code> clause accepts an array parameter which can be decomposed (<code>then([p,r])</code>:<br />(p) being a Protein object and the second<br />(r) being the raw GET result from uniprot<br />Promise get&#39;s rejected (aka. <code>catch</code> clause) if 5<strong> or 4</strong> response from server.</p></td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="description"><p>Get Protein object from Accession number (via UniProt).</p></div>
+          <pre><code class="language-javascript">function getProteins(text) {
+
+}
+
 exports.Protein = Protein;
 exports.fromFasta = fromFasta;
-exports.byAccession = byAccession;</code></pre>
+exports.byAccession = byAccession;
+exports.getProteins = getProteins;</code></pre>
         </div>
       </div>
     </div>

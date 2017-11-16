@@ -225,3 +225,20 @@ export function byAccession(accession) {
         });
     }
 }
+
+// TODO: auto detect input
+/**
+ * Get Protein object from Accession number (via UniProt).
+ *
+ *
+ * @param           {String}    accession   A string representing the uniprot accession number (eg.: P12345)
+ *
+ * @return          {Promise}   A promise that in it's `then` clause accepts an array parameter
+ * which can be decomposed (`then([p,r])`:
+ * (p) being a Protein object and the second
+ * (r) being the raw GET result from uniprot
+ * Promise get's rejected (aka. `catch` clause) if 5** or 4** response from server.
+ */
+export function getProteins(text) {
+
+}
