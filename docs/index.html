@@ -41,32 +41,44 @@
         </div>
         <div class="span9">
           <section id="Main" class="readme"><h1>Protein</h1>
-<p>Some description</p>
 <hr>
 <h2>How to use</h2>
 <p>Require this package via npm, then:</p>
 <ol>
 <li>
 <p>In a node application:</p>
-<pre><code class="language-javascript">const Disi = require('disi');
+<pre><code class="language-javascript">const Protein = require('protein');
 
-let v = [1,2];
-let u = [3,2];
-let euclidian = Disi.euclidian(u, v));
-console.log(euclidian);
+let testText = &quot;ABBABABABABABABA&quot;;
+
+let parsingFunction = Protein.autodetect(testText);
+
+if(parsingFunction !== undefined){
+    parsingFunction(testText)
+        .then(([proteins, _]) =&gt; {
+            proteins.forEach(p =&gt; console.log(p));
+        });
+}
 </code></pre>
 </li>
 <li>
 <p>For use in web pages</p>
-<pre><code class="language-html">&lt;script src=&quot;path/to/build/disi.js&quot;&gt;&lt;/script&gt;
+<pre><code class="language-html">&lt;script src=&quot;path/to/build/protein-browser.js&quot;&gt;&lt;/script&gt;
 
-&lt;s        let euclidian = Disi.euclidian(u, v));
-    alert(euclidian);
+&lt;script&gt;
+     Protein.fromAccession(&quot;P12345&quot;)
+             .then(([proteins, raw]) =&gt; {
+                 var retrievedProtein = proteins[0];
+                 createElement(JSON.stringify(retrievedProtein));
+             })
+             .catch(() =&gt; {
+                 console.error(&quot;could not GET protein by accession&quot;);
+             });
 &lt;/script&gt;
 </code></pre>
 </li>
 </ol>
-<p>You can refer to the <code>examples</code> folder for complete examples.</p>
+<p>You can refer to the <code>examples</code> folder for complete examples and the <code>docs</code> for documentation.</p>
 </section>
         </div>
       </div>

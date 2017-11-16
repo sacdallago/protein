@@ -40,7 +40,7 @@
         "protein",
         "parser"
     ],
-    "main": "build/protein.js",
+    "main": "build/protein-node.js",
     "scripts": {
         "build-browser": "webpack --config webpack.config.browser.js",
         "build-node": "webpack",
