@@ -7,6 +7,8 @@
 <body>
 <h1>Examples</h1>
 <div id="container"></div>
+
+
 <script src="../build/protein-browser.js"></script>
 <script>
     function createElement(text) {
@@ -54,26 +56,30 @@ DAKGMATIDSNLEWVRLAQRVPVRIRLDEQQGNLWPAGTTATVVITGKQDRDASQDSFFR
 KLAHRLREFG
     `;
 
-    let [proteins, parsedFasta] = Protein.fromFasta(fasta);
+    Protein.fromFasta(fasta)
+        .then(([proteins, parsedFasta]) => {
+            createElement("-----------PROTEINS-FASTA-----------");
+            proteins.forEach(e => createElement(JSON.stringify(e)));
+            createElement("-----------PROTEINS-FASTA-----------");
 
-    createElement("-----------PROTEINS-FASTA-----------");
-    proteins.forEach(e => createElement(JSON.stringify(e)));
-    createElement("-----------PROTEINS-FASTA-----------");
+            parsedFasta.forEach((e,i) => {
+                let hit = e.headerInfo.find(p => p.database === "sp");
 
-    parsedFasta.forEach((e,i) => {
-        let hit = e.headerInfo.find(p => p.database === "sp");
+                if(hit){
+                    let c = proteins[i];
 
-        if(hit){
-            let c = proteins[i];
-
-            c.retrieveUniprotData(hit.identifier)
-                .then(() => {
-                    createElement("-----------API-ACCESSION-FROM-FASTA-----------");
-                    createElement(JSON.stringify(c));
-                    createElement("-----------API-ACCESSION-FROM-FASTA-----------");
-                });
-        }
-    });
+                    c.retrieveUniprotData(hit.identifier)
+                        .then(() => {
+                            createElement("-----------API-ACCESSION-FROM-FASTA-----------");
+                            createElement(JSON.stringify(c));
+                            createElement("-----------API-ACCESSION-FROM-FASTA-----------");
+                        });
+                }
+            });
+        })
+        .catch(() => {
+            console.error("could not GET protein by accession");
+        });
 
     Protein.byAccession("P12345")
         .then(([protein, raw]) => {
@@ -86,5 +92,7 @@ KLAHRLREFG
             console.error("could not GET protein by accession");
         });
 </script>
+
+
 </body>
 </html>

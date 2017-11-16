@@ -35,37 +35,30 @@ DAKGMATIDSNLEWVRLAQRVPVRIRLDEQQGNLWPAGTTATVVITGKQDRDASQDSFFR
 KLAHRLREFG
     `;
 
-let invalid = `
-;LCBO - Prolactin precursor - Bovine
-; a sample sequence in FASTA format
-MDSKGSSQKGSRLLLLLVVSNLLLCQGVVSTPVCPNGPGNCQVSLRDLFDRAVMVSHYIHDLSS
-EMFNEFDKRYAQGKGFITMALNSCHTSSLPTPEDKEQAQQTHHEVLMSLILGLLRSWNDPLYHL
-VTEVRGMKGAPDAILSRAIEIEEENKRLLEGMEMIFGQVIPGAKETEPYPVWSGLPSLQTKDED
-ARYSAFYNLLHCLRRDSSKIDTYLKLLNCRIIYNNNC*
-Random text
-    `;
+Protein.fromFasta(fasta)
+    .then(([proteins, parsedFasta]) => {
+        console.log("-----------FROM-FASTA-----------");
+        console.log(proteins);
+        console.log("-----------FROM-FASTA-----------");
 
-let [proteins, parsedFasta] = Protein.fromFasta(fasta);
+        parsedFasta.forEach((e,i) => {
+            let hit = e.headerInfo.find(p => p.database === "sp");
 
+            if(hit){
+                let c = proteins[i];
 
-console.log("-----------FROM-FASTA-----------");
-console.log(proteins);
-console.log("-----------FROM-FASTA-----------");
-
-parsedFasta.forEach((e,i) => {
-    let hit = e.headerInfo.find(p => p.database === "sp");
-
-    if(hit){
-        let c = proteins[i];
-
-        c.retrieveUniprotData(hit.identifier)
-            .then(() => {
-                console.log("-----------API-ACCESSION-FROM-FASTA-----------");
-                console.log(c);
-                console.log("-----------API-ACCESSION-FROM-FASTA-----------");
-            });
-    }
-});
+                c.retrieveUniprotData(hit.identifier)
+                    .then(() => {
+                        console.log("-----------API-ACCESSION-FROM-FASTA-----------");
+                        console.log(c);
+                        console.log("-----------API-ACCESSION-FROM-FASTA-----------");
+                    });
+            }
+        });
+    })
+    .catch(() => {
+        console.error("could not GET protein by accession");
+    });
 
 Protein.byAccession("P12345")
     .then(([protein, raw]) => {
