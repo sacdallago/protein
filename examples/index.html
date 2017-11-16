@@ -44,6 +44,14 @@ MDSKGSSQKGSRLLLLLVVSNLLLCQGVVSTPVCPNGPGNCQVSLRDLFDRAVMVSHYIHDLSS
 EMFNEFDKRYAQGKGFITMALNSCHTSSLPTPEDKEQAQQTHHEVLMSLILGLLRSWNDPLYHL
 VTEVRGMKGAPDAILSRAIEIEEENKRLLEGMEMIFGQVIPGAKETEPYPVWSGLPSLQTKDED
 ARYSAFYNLLHCLRRDSSKIDTYLKLLNCRIIYNNNC*
+
+>sp|C0PZR0|AAEA_SALPC p-hydroxybenzoic acid efflux pump subunit AaeA OS=Salmonella paratyphi C (strain RKS4594) GN=aaeA PE=3 SV=1
+MKTLTRKLSRTAITLVLVILAFIAIFRAWVYYTESPWTRDARFSADVVAIAPDVAGLITH
+VNVHDNQLVKKDQVLFTIDQPRYQKALAEAEADVAYYQVLAQEKRQEAGRRNRLGVQAMS
+REEIDQANNVLQTVLHQLAKAQATRDLAKLDLERTVIRAPADGWVTNLNVYAGEFITRGS
+TAVALVKKNSFYVQAYMEETKLEGVRPGYRAEITPLGSNRVLKGTVDSVAAGVTNASSTS
+DAKGMATIDSNLEWVRLAQRVPVRIRLDEQQGNLWPAGTTATVVITGKQDRDASQDSFFR
+KLAHRLREFG
     `;
 
     let [proteins, parsedFasta] = Protein.fromFasta(fasta);
@@ -51,6 +59,21 @@ ARYSAFYNLLHCLRRDSSKIDTYLKLLNCRIIYNNNC*
     createElement("-----------PROTEINS-FASTA-----------");
     proteins.forEach(e => createElement(JSON.stringify(e)));
     createElement("-----------PROTEINS-FASTA-----------");
+
+    parsedFasta.forEach((e,i) => {
+        let hit = e.headerInfo.find(p => p.database === "sp");
+
+        if(hit){
+            let c = proteins[i];
+
+            c.retrieveUniprotData(hit.identifier)
+                .then(() => {
+                    createElement("-----------API-ACCESSION-FROM-FASTA-----------");
+                    createElement(JSON.stringify(c));
+                    createElement("-----------API-ACCESSION-FROM-FASTA-----------");
+                });
+        }
+    });
 
     Protein.byAccession("P12345")
         .then(([protein, raw]) => {

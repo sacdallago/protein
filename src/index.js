@@ -15,18 +15,47 @@ if (process.browser) {
  */
 export class Protein {
 
-    constructor(sequence, identifier){
+    constructor(sequence){
         this.sequence = sequence;
-        this.identifier = identifier;
         this.hash = md5(sequence);
     }
 
-    hasMapping(){
-        return false;
+    setUniprotData(uniprotData){
+        this.uniprotData = uniprotData;
     }
 
-    getUniprotMapping(){
-        return undefined;
+    retrieveUniprotData(accession){
+        let url = 'https://www.ebi.ac.uk/proteins/api/proteins/' + accession;
+        let self = this;
+
+        if (process.browser) {
+            return new Promise((resolve, reject) => {
+                $.get(url, (protein) => {
+                    self.uniprotData = protein;
+                    resolve(protein);
+                }).fail(() => {
+                    reject();
+                });
+            });
+        } else {
+            return new Promise((resolve, reject) => {
+                request
+                    .get(url, (error, response, body) => {
+                        if(error){
+                            reject(error);
+                        } else {
+                            let protein = JSON.parse(body);
+
+                            self.uniprotData = protein;
+                            resolve(protein);
+                        }
+                    })
+            });
+        }
+    }
+
+    getUniprotData(uniprotData){
+        return this.uniprotData;
     }
 }
 
@@ -52,6 +81,43 @@ export function fromFasta(text){
     let readingSequence = false;
     let readingHeaders = false;
 
+    let extractHeaderInfo = (header) => {
+
+        // GenBank	gb|accession|locus
+        let geneBank = /gb\|\w+(\.\w+)\|.*/;
+        // EMBL Data Library	emb|accession|locus
+        // DDBJ, DNA Database of Japan	dbj|accession|locus
+        // NBRF PIR	pir||entry
+        // Protein Research Foundation	prf||name
+        // SWISS-PROT	sp|accession|entry name
+        let swissProt = /sp\|\w+\|.*/;
+        // Brookhaven Protein Data Bank	pdb|entry|chain
+        // Patents	pat|country|number
+        // GenInfo Backbone Id	bbs|number
+        // General database identifier	gnl|database|identifier
+        // NCBI Reference Sequence	ref|accession|locus
+        // Local Sequence identifier	lcl|identifier
+
+        let matchers = [geneBank, swissProt];
+
+        return matchers
+            .map(e => {
+                let current = header.match(e);
+                if (current !== undefined && current !== null) {
+                    current = current[0].split("|");
+
+                    return {
+                        "database": current[0],
+                        "identifier": current[1],
+                        "locus": current[2]
+                    };
+                } else {
+                    return undefined;
+                }
+            })
+            .filter(e => e !== undefined);
+    };
+
     text
     // Split line by line
         .split("\n")
@@ -70,6 +136,7 @@ export function fromFasta(text){
                 case (/^;/.test(line) && readingSequence === false && readingHeaders === false):
                     sequences.push({
                         header: line.substring(1, line.length),
+                        headerInfo: extractHeaderInfo(line),
                         sequence: '',
                         comments: ''
                     });
@@ -133,7 +200,10 @@ export function byAccession(accession) {
     if (process.browser) {
         return new Promise((resolve, reject) => {
             $.get(url, (protein) => {
-                resolve([new Protein(protein.sequence.sequence, accession), protein]);
+                let p = new Protein(protein.sequence.sequence);
+                p.setUniprotData(protein);
+
+                resolve([p, protein]);
             }).fail(() => {
                 reject();
             });
@@ -146,7 +216,10 @@ export function byAccession(accession) {
                         reject(error);
                     } else {
                         let protein = JSON.parse(body);
-                        resolve([new Protein(protein.sequence.sequence, accession), protein]);
+                        let p = new Protein(protein.sequence.sequence);
+                        p.setUniprotData(protein);
+
+                        resolve([p, protein]);
                     }
                 })
         });
