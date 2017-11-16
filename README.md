@@ -1,5 +1,4 @@
 # Protein
-Some description
 ***
 
 ## How to use
@@ -7,21 +6,34 @@ Require this package via npm, then:
 
 1. In a node application:
     ```javascript
-    const Disi = require('disi');
+    const Protein = require('protein');
 
-    let v = [1,2];
-    let u = [3,2];
-    let euclidian = Disi.euclidian(u, v));
-    console.log(euclidian);
+    let testText = "ABBABABABABABABA";
+
+    let parsingFunction = Protein.autodetect(testText);
+
+    if(parsingFunction !== undefined){
+        parsingFunction(testText)
+            .then(([proteins, _]) => {
+                proteins.forEach(p => console.log(p));
+            });
+    }
     ```
 
 2. For use in web pages
     ```html
-    <script src="path/to/build/disi.js"></script>
+    <script src="path/to/build/protein-browser.js"></script>
 
-    <s        let euclidian = Disi.euclidian(u, v));
-        alert(euclidian);
+    <script>
+         Protein.fromAccession("P12345")
+                 .then(([proteins, raw]) => {
+                     var retrievedProtein = proteins[0];
+                     createElement(JSON.stringify(retrievedProtein));
+                 })
+                 .catch(() => {
+                     console.error("could not GET protein by accession");
+                 });
     </script>
     ```
 
-You can refer to the `examples` folder for complete examples.
+You can refer to the `examples` folder for complete examples and the `docs` for documentation.
