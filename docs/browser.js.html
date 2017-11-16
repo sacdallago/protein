@@ -362,8 +362,8 @@
         case (text.match(AASequence) !== null &amp;&amp; text.match(AASequence) !== undefined):
             return fromSequence;
             break;
-        case (text.match(AASequence) !== null &amp;&amp; text.match(AASequence) !== undefined):
-            return fromSequence;
+        case validFasta(text):
+            return fromFasta;
             break;
         default:
             return undefined;

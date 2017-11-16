@@ -77,6 +77,21 @@ if(parsingFunction !== undefined){
 &lt;/script&gt;
 </code></pre>
 </li>
+<li>
+<p>Use non-transpiled methods (e.g. React)</p>
+<pre><code class="language-javascript">import { fromAccession } from 'protein/lib/browser';
+
+
+Protein.fromAccession(&quot;P12345&quot;)
+    .then(([proteins, raw]) =&gt; {
+        var retrievedProtein = proteins[0];
+        createElement(JSON.stringify(retrievedProtein));
+    })
+    .catch(() =&gt; {
+        console.error(&quot;could not GET protein by accession&quot;);
+    });
+</code></pre>
+</li>
 </ol>
 <p>You can refer to the <code>examples</code> folder for complete examples and the <code>docs</code> for documentation.</p>
 </section>

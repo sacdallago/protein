@@ -17253,8 +17253,8 @@ function autodetect(text) {
         case text.match(AASequence) !== null && text.match(AASequence) !== undefined:
             return fromSequence;
             break;
-        case text.match(AASequence) !== null && text.match(AASequence) !== undefined:
-            return fromSequence;
+        case validFasta(text):
+            return fromFasta;
             break;
         default:
             return undefined;
