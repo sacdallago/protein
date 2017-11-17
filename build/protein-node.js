@@ -16946,6 +16946,19 @@ const accessionNumberRegex = /^[OPQ][0-9][A-Z0-9]{3}[0-9]|[A-NR-Z][0-9]([A-Z][A-
 const AASequence = /^(([A-Z])+\n{0,1})+$/;
 
 const validFasta = fasta => {
+
+    /** sequences holds three stages
+     * 0: no sequences parsed --> invalid fasta
+     * 1: One sequence has been parsed header only (missing sequence part)
+     * 2: all sequences in FASTA file have header AND sequence
+     **/
+
+    let sequences = 0;
+
+    // this flags get updated when I'm reading a sequence. No comments should appear when I'm reading a sequence (see switch).
+    let readingSequence = false;
+    let readingHeaders = false;
+
     fasta
     // Split line by line
     .split("\n")
@@ -16953,10 +16966,6 @@ const validFasta = fasta => {
     .filter(s => s.replace(/[\s|\t]+/, '').length > 0)
     // Perform switch on line output
     .forEach(line => {
-        // this flag get's updated when I'm reading a sequence. No comments should appear when I'm reading a sequence (see switch).
-        let readingSequence = false;
-        let readingHeaders = false;
-
         switch (true) {
             // Marks beginning of sequence in common FASTA file
             case /^>/.test(line):
@@ -16969,19 +16978,23 @@ const validFasta = fasta => {
                 readingHeaders = true;
                 readingSequence = false;
 
+                sequences = 1;
+
                 break;
 
             // Some sequences terminate in *. Get rid of that and update the reading sequence condition.
-            case /^[A-Z]+\*$/.test(line):
+            case /^[A-Z]+\*$/.test(line) && (readingSequence === false && readingHeaders === true || readingSequence === true && readingHeaders === false):
                 readingSequence = false;
+                sequences = 2;
 
                 break;
 
             // If repetition of characters, most likely sequence
             // IMPORTANT!!! ONLY CAPITAL LETTERS!!!!
-            case /^[A-Z]+$/.test(line):
+            case /^[A-Z]+$/.test(line) && (readingSequence === false && readingHeaders === true || readingSequence === true && readingHeaders === false):
                 readingSequence = true;
                 readingHeaders = false;
+                sequences = 2;
 
                 break;
 
@@ -16995,7 +17008,8 @@ const validFasta = fasta => {
         }
     });
 
-    return true;
+    console.log(sequences);
+    return sequences === 2;
 };
 
 const extractFASTAHeaderInfo = header => {
@@ -17127,7 +17141,7 @@ function fromFasta(text) {
                     break;
 
                 // Some sequences terminate in *. Get rid of that and update the reading sequence condition.
-                case /^[A-Z]+\*$/.test(line):
+                case /^[A-Z]+\*$/.test(line) && (readingSequence === false && readingHeaders === true || readingSequence === true && readingHeaders === false):
                     sequences[sequences.length - 1].sequence += line.substring(1, line.length - 1);
 
                     readingSequence = false;
@@ -17136,7 +17150,7 @@ function fromFasta(text) {
 
                 // If repetition of characters, most likely sequence
                 // IMPORTANT!!! ONLY CAPITAL LETTERS!!!!
-                case /^[A-Z]+$/.test(line):
+                case /^[A-Z]+$/.test(line) && (readingSequence === false && readingHeaders === true || readingSequence === true && readingHeaders === false):
                     sequences[sequences.length - 1].sequence += line;
 
                     readingSequence = true;
