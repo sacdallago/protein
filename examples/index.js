@@ -76,8 +76,8 @@ Protein.fromFasta(fasta)
             }
         });
     })
-    .catch(() => {
-        console.error("could not GET protein by accession");
+    .catch((e) => {
+        console.error(e);
     });
 
 Protein.fromAccession("P12345")
