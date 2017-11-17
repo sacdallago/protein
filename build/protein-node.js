@@ -17008,7 +17008,6 @@ const validFasta = fasta => {
         }
     });
 
-    console.log(sequences);
     return sequences === 2;
 };
 
