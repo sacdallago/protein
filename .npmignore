@@ -1,6 +1,7 @@
 .gitignore
 examples/
 private/
+docs/
 Gruntfile.js
 LICENSE
 README.md
