@@ -181,7 +181,7 @@ export function fromFasta(text, alphabet){
  * Promise get's rejected (aka. `catch` clause) if 5** or 4** response from server.
  */
 export function fromAccession(accession) {
-    if(accession.match(accessionNumberRegex) === null || accession.match(accessionNumberRegex) === undefined){
+    if(!accessionNumberRegex.test(text)){
         return new Promise((resolve, reject) => {
             return reject();
         });
@@ -249,7 +249,7 @@ export function fromSequence(sequence, alphabet) {
     });
 }
 
-// TODO: auto detect input
+
 /**
  * Get Protein object from Accession number (via UniProt).
  *
@@ -265,9 +265,9 @@ export function fromSequence(sequence, alphabet) {
  * @return          {boolean}   True if text can be parsed either as UniProt accession, AA sequence or FASTA file
  */
 export function validInput(text, alphabet) {
-    return (text.match(accessionNumberRegex) !== null && text.match(accessionNumberRegex) !== undefined) ||
-        (text.match(sequenceParser(alphabet)) !== null && text.match(sequenceParser(alphabet)) !== undefined) ||
-        validFasta(text, alphabet);
+    return accessionNumberRegex.test(text)
+        || sequenceParser(alphabet).test(text)
+        || validFasta(text, alphabet);
 }
 
 
@@ -287,10 +287,10 @@ export function validInput(text, alphabet) {
  */
 export function autodetect(text, alphabet) {
     switch(true){
-        case (text.match(accessionNumberRegex) !== null && text.match(accessionNumberRegex) !== undefined):
+        case (accessionNumberRegex.test(text)):
             return fromAccession;
             break;
-        case (text.match(sequenceParser(alphabet)) !== null && text.match(sequenceParser(alphabet)) !== undefined):
+        case sequenceParser(alphabet).test(text):
             // Return nested function, so that alphabet is defined at this stage already (avoid inconsistency!)
             return (text) => fromSequence(text, alphabet);
             break;

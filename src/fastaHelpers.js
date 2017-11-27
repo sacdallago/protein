@@ -8,8 +8,9 @@ export const sequenceParser = (alphabet) => {
             return /^(([ACDEFGHIKLMNPQRSTVWYBXZ])+\n{0,1})+$/;
         case "IUPAC":
         case "NATURAL":
+        case undefined:
         default:
-            return /^(([ACDEFGHIKLMNPQRSTVWY])+\n{0,1})+$/;
+            return /^([ACDEFGHIKLMNPQRSTVWY])+$/;
     }
 };
 
@@ -23,6 +24,7 @@ export const FASTABodyParser = (alphabet) => {
             return /^([ACDEFGHIKLMNPQRSTVWYBXZ])+$/;
         case "IUPAC":
         case "NATURAL":
+        case undefined:
         default:
             return /^([ACDEFGHIKLMNPQRSTVWY])+$/;
     }
@@ -38,6 +40,7 @@ export const FASTAEndReadParser = (alphabet) => {
             return /^([ACDEFGHIKLMNPQRSTVWYBXZ])+\*$/;
         case "IUPAC":
         case "NATURAL":
+        case undefined:
         default:
             return /^([ACDEFGHIKLMNPQRSTVWY])+\*$/;
     }
