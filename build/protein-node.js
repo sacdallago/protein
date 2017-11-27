@@ -16933,25 +16933,70 @@ function _interopDefault(ex) {
 
 var md5 = _interopDefault(__webpack_require__(89));
 
-let request;
+const sequenceParser = alphabet => {
+    switch (alphabet) {
+        case "PSI-BLAST":
+            return (/^(([A-Z*\-])+\n{0,1})+$/
+            );
+        case "EXTENDED-IUPAC2":
+            return (/^(([ACDEFGHIKLMNPQRSTVWYBXZ*\-])+\n{0,1})+$/
+            );
+        case "IUPAC2":
+            return (/^(([ACDEFGHIKLMNPQRSTVWYBXZ])+\n{0,1})+$/
+            );
+        case "IUPAC":
+        case "NATURAL":
+        default:
+            return (/^(([ACDEFGHIKLMNPQRSTVWY])+\n{0,1})+$/
+            );
+    }
+};
 
-{
-    request = __webpack_require__(92);
-}
+const FASTABodyParser = alphabet => {
+    switch (alphabet) {
+        case "PSI-BLAST":
+            return (/^([A-Z\-])+$/
+            );
+        case "EXTENDED-IUPAC2":
+            return (/^([ACDEFGHIKLMNPQRSTVWYBXZ\-])+$/
+            );
+        case "IUPAC2":
+            return (/^([ACDEFGHIKLMNPQRSTVWYBXZ])+$/
+            );
+        case "IUPAC":
+        case "NATURAL":
+        default:
+            return (/^([ACDEFGHIKLMNPQRSTVWY])+$/
+            );
+    }
+};
 
-// Private functions and constants
-// From http://www.uniprot.org/help/accession_numbers
-const accessionNumberRegex = /^[OPQ][0-9][A-Z0-9]{3}[0-9]|[A-NR-Z][0-9]([A-Z][A-Z0-9]{2}[0-9]){1,2}$/;
+const FASTAEndReadParser = alphabet => {
+    switch (alphabet) {
+        case "PSI-BLAST":
+            return (/^([A-Z\-])+\*$/
+            );
+        case "EXTENDED-IUPAC2":
+            return (/^([ACDEFGHIKLMNPQRSTVWYBXZ*\-])+\*$/
+            );
+        case "IUPAC2":
+            return (/^([ACDEFGHIKLMNPQRSTVWYBXZ])+\*$/
+            );
+        case "IUPAC":
+        case "NATURAL":
+        default:
+            return (/^([ACDEFGHIKLMNPQRSTVWY])+\*$/
+            );
+    }
+};
 
-const AASequence = /^(([A-Z])+\n{0,1})+$/;
+const validFasta = (fasta, alphabet) => {
 
-const validFasta = fasta => {
+    // sequences holds three stages
+    // 0: no sequences parsed --> invalid fasta
+    // 1: One sequence has been parsed header only (missing sequence part)
+    // 2: all sequences in FASTA file have header AND sequence
 
-    /** sequences holds three stages
-     * 0: no sequences parsed --> invalid fasta
-     * 1: One sequence has been parsed header only (missing sequence part)
-     * 2: all sequences in FASTA file have header AND sequence
-     **/
 
     let sequences = 0;
 
@@ -16983,7 +17028,7 @@ const validFasta = fasta => {
                 break;
 
             // Some sequences terminate in *. Get rid of that and update the reading sequence condition.
-            case /^[A-Z]+\*$/.test(line) && (readingSequence === false && readingHeaders === true || readingSequence === true && readingHeaders === false):
+            case FASTAEndReadParser(alphabet).test(line) && (readingSequence === false && readingHeaders === true || readingSequence === true && readingHeaders === false):
                 readingSequence = false;
                 sequences = 2;
 
@@ -16991,7 +17036,7 @@ const validFasta = fasta => {
 
             // If repetition of characters, most likely sequence
             // IMPORTANT!!! ONLY CAPITAL LETTERS!!!!
-            case /^[A-Z]+$/.test(line) && (readingSequence === false && readingHeaders === true || readingSequence === true && readingHeaders === false):
+            case FASTABodyParser(alphabet).test(line) && (readingSequence === false && readingHeaders === true || readingSequence === true && readingHeaders === false):
                 readingSequence = true;
                 readingHeaders = false;
                 sequences = 2;
@@ -17046,6 +17091,16 @@ const extractFASTAHeaderInfo = header => {
     }).filter(e => e !== undefined);
 };
 
+let request;
+
+{
+    request = __webpack_require__(92);
+}
+
+// Private functions and constants
+// From http://www.uniprot.org/help/accession_numbers
+const accessionNumberRegex = /^[OPQ][0-9][A-Z0-9]{3}[0-9]|[A-NR-Z][0-9]([A-Z][A-Z0-9]{2}[0-9]){1,2}$/;
+
 /**
  * Class Protein exports functions to parse specific text formats
  */
@@ -17089,7 +17144,14 @@ class Protein {
  * Get Protein objects from Fasta string.
  *
  *
- * @param       {String}    text    A string representing the FASTA input
+ * @param           {String}    text        A string representing the FASTA input
+ * @param           {String}    alphabet    A string representing the alphabet to use for validation.
+ *                                          Valid alphabets include ["IUPAC"](http://www.bioinformatics.org/sms/iupac.html),
+ *                                          ["IUPAC2"](http://www.bioinformatics.org/sms2/iupac.html),
+ *                                          ["EXTENDED-IUPAC2"](http://www.bioinformatics.org/sms2/iupac.html),
+ *                                          ["PSI-BLAST"](https://blast.ncbi.nlm.nih.gov/Blast.cgi?CMD=Web&PAGE_TYPE=BlastDocs&DOC_TYPE=BlastHelp).
+ *                                          Default is ["IUPAC"](http://www.bioinformatics.org/sms/iupac.html).
+ *
  * @return      {Promise}   A promise that in it's `then` clause accepts an array parameter
  * which can be decomposed (`then([p,r])`:
  * (p) being an array of Protein objects
@@ -17097,7 +17159,7 @@ class Protein {
  * Promise get's rejected (aka. `catch` clause) if some parsing error occurs.
  *
  */
-function fromFasta(text) {
+function fromFasta(text, alphabet) {
     if (typeof text !== 'string') {
         throw "Passed invalid object to parse function.";
     } else if (text.length < 1) {
@@ -17140,7 +17202,7 @@ function fromFasta(text) {
                     break;
 
                 // Some sequences terminate in *. Get rid of that and update the reading sequence condition.
-                case /^[A-Z]+\*$/.test(line) && (readingSequence === false && readingHeaders === true || readingSequence === true && readingHeaders === false):
+                case FASTAEndReadParser(alphabet).test(line) && (readingSequence === false && readingHeaders === true || readingSequence === true && readingHeaders === false):
                     sequences[sequences.length - 1].sequence += line.substring(1, line.length - 1);
 
                     readingSequence = false;
@@ -17149,7 +17211,7 @@ function fromFasta(text) {
 
                 // If repetition of characters, most likely sequence
                 // IMPORTANT!!! ONLY CAPITAL LETTERS!!!!
-                case /^[A-Z]+$/.test(line) && (readingSequence === false && readingHeaders === true || readingSequence === true && readingHeaders === false):
+                case FASTABodyParser(alphabet).test(line) && (readingSequence === false && readingHeaders === true || readingSequence === true && readingHeaders === false):
                     sequences[sequences.length - 1].sequence += line;
 
                     readingSequence = true;
@@ -17217,6 +17279,12 @@ function fromAccession(accession) {
  *
  *
  * @param           {String}    sequence   A string representing a protein sequence (A-Z)
+ * @param           {String}    alphabet   A string representing the alphabet to use for validation.
+ *                                          Valid alphabets include ["IUPAC"](http://www.bioinformatics.org/sms/iupac.html),
+ *                                          ["IUPAC2"](http://www.bioinformatics.org/sms2/iupac.html),
+ *                                          ["EXTENDED-IUPAC2"](http://www.bioinformatics.org/sms2/iupac.html),
+ *                                          ["PSI-BLAST"](https://blast.ncbi.nlm.nih.gov/Blast.cgi?CMD=Web&PAGE_TYPE=BlastDocs&DOC_TYPE=BlastHelp).
+ *                                          Default is ["IUPAC"](http://www.bioinformatics.org/sms/iupac.html).
  *
  * @return          {Promise}   A promise that in it's `then` clause accepts an array parameter
  * which can be decomposed (`then([p,r])`:
@@ -17224,9 +17292,9 @@ function fromAccession(accession) {
  * (r) being an array containing one string representing the sequence matched
  * Promise get's rejected (aka. `catch` clause) if parsing doesn't identify candidates
  */
-function fromSequence(sequence) {
+function fromSequence(sequence, alphabet) {
     return new Promise((resolve, reject) => {
-        let match = sequence.match(AASequence);
+        let match = sequence.match(sequenceParser(alphabet));
         if (match !== undefined && match !== null) {
             match = match.map(e => e.replace(/\n/g, ""));
 
@@ -17243,11 +17311,17 @@ function fromSequence(sequence) {
  *
  *
  * @param           {String}    text   A string representing a FASTA sequence, an UniProt accession or a sequence in A-Z format
+ * @param           {String}    alphabet   A string representing the alphabet to use for validation.
+ *                                          Valid alphabets include ["IUPAC"](http://www.bioinformatics.org/sms/iupac.html),
+ *                                          ["IUPAC2"](http://www.bioinformatics.org/sms2/iupac.html),
+ *                                          ["EXTENDED-IUPAC2"](http://www.bioinformatics.org/sms2/iupac.html),
+ *                                          ["PSI-BLAST"](https://blast.ncbi.nlm.nih.gov/Blast.cgi?CMD=Web&PAGE_TYPE=BlastDocs&DOC_TYPE=BlastHelp).
+ *                                          Default is ["IUPAC"](http://www.bioinformatics.org/sms/iupac.html).
  *
  * @return          {boolean}   True if text can be parsed either as UniProt accession, AA sequence or FASTA file
  */
-function validInput(text) {
-    return text.match(accessionNumberRegex) !== null && text.match(accessionNumberRegex) !== undefined || text.match(AASequence) !== null && text.match(AASequence) !== undefined || validFasta(text);
+function validInput(text, alphabet) {
+    return text.match(accessionNumberRegex) !== null && text.match(accessionNumberRegex) !== undefined || text.match(sequenceParser(alphabet)) !== null && text.match(sequenceParser(alphabet)) !== undefined || validFasta(text, alphabet);
 }
 
 /**
@@ -17255,19 +17329,27 @@ function validInput(text) {
  *
  *
  * @param           {String}    text   A string representing a FASTA sequence, an UniProt accession or a sequence in A-Z format
+ * @param           {String}    alphabet   A string representing the alphabet to use for validation.
+ *                                          Valid alphabets include ["IUPAC"](http://www.bioinformatics.org/sms/iupac.html),
+ *                                          ["IUPAC2"](http://www.bioinformatics.org/sms2/iupac.html),
+ *                                          ["EXTENDED-IUPAC2"](http://www.bioinformatics.org/sms2/iupac.html),
+ *                                          ["PSI-BLAST"](https://blast.ncbi.nlm.nih.gov/Blast.cgi?CMD=Web&PAGE_TYPE=BlastDocs&DOC_TYPE=BlastHelp).
+ *                                          Default is ["IUPAC"](http://www.bioinformatics.org/sms/iupac.html).
  *
  * @return          {function}   Returns the correct function to parse the text passed or `undefined` if text doesn't conform to any standard (AA, FASTA, UniProt Accession).
  */
-function autodetect(text) {
+function autodetect(text, alphabet) {
     switch (true) {
         case text.match(accessionNumberRegex) !== null && text.match(accessionNumberRegex) !== undefined:
             return fromAccession;
             break;
-        case text.match(AASequence) !== null && text.match(AASequence) !== undefined:
-            return fromSequence;
+        case text.match(sequenceParser(alphabet)) !== null && text.match(sequenceParser(alphabet)) !== undefined:
+            // Return nested function, so that alphabet is defined at this stage already (avoid inconsistency!)
+            return text => fromSequence(text, alphabet);
             break;
-        case validFasta(text):
-            return fromFasta;
+        case validFasta(text, alphabet):
+            // Return nested function, so that alphabet is defined at this stage already (avoid inconsistency!)
+            return text => fromFasta(text, alphabet);
             break;
         default:
             return undefined;

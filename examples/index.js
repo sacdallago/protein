@@ -55,7 +55,7 @@ Protein.fromSequence(AASequences)
     });
 
 
-Protein.fromFasta(fasta)
+Protein.fromFasta(fasta, "PSI-BLAST")
     .then(([proteins, parsedFasta]) => {
         console.log("-----------FROM-FASTA-----------");
         console.log(proteins);
@@ -101,9 +101,9 @@ Protein.fromAccession("P12345")
         console.error("could not GET protein by accession");
     });
 
-let testText = "ABBABABABABABABA";
+let testText = "ABBABABABABABABAJIJI-GAP*SOMETHING";
 
-let parsingFunction = Protein.autodetect(testText);
+let parsingFunction = Protein.autodetect(testText, "PSI-BLAST");
 
 if(parsingFunction !== undefined){
     parsingFunction(testText)
@@ -111,5 +111,16 @@ if(parsingFunction !== undefined){
             console.log("-----------AUTODETECT-----------");
             console.log(proteins);
             console.log("-----------AUTODETECT-----------");
+        })
+}
+
+parsingFunction = Protein.autodetect(fasta, "PSI-BLAST");
+
+if(parsingFunction !== undefined){
+    parsingFunction(fasta)
+        .then(([proteins, _]) => {
+            console.log("-----------AUTODETECT-FASTA-----------");
+            console.log(proteins);
+            console.log("-----------AUTODETECT-FASTA-----------");
         })
 }

@@ -36,8 +36,6 @@
           </ul>
           <div class="scrollspy">
             <ul class="nav nav-list bs-docs-sidenav affix-top">
-              <li><a href="#sequences"><i class="alert alert-success"></i><span>sequences</span></a>
-              </li>
               <li><a href="#Protein"><i class="alert alert-success"></i><span>Protein</span></a>
               </li>
               <li><a href="#fromFasta"><i class="alert alert-info"></i><span>fromFasta</span></a>
@@ -54,115 +52,6 @@
           </div>
         </div>
         <div class="span9">
-          <section id="sequences">
-            <h1>sequences</h1>
-            <h5 class="subheader"></h5>
-            <p>
-              <div class="label label-success radius ctx-type">declaration</div><span>&nbsp;</span><span>sequences</span><span>&nbsp;</span>
-            </p>
-          </section>
-          <div class="description"><p>sequences holds three stages<br />0: no sequences parsed --&gt; invalid fasta<br />1: One sequence has been parsed header only (missing sequence part)<br />2: all sequences in FASTA file have header AND sequence</p></div>
-          <pre><code class="language-javascript">let sequences = 0;
-
-// this flags get updated when I'm reading a sequence. No comments should appear when I'm reading a sequence (see switch).
-let readingSequence = false;
-let readingHeaders = false;
-
-fasta
-// Split line by line
-    .split(&quot;\n&quot;)
-    // Get rid of lines only containing spaces or tabs (or nothing)
-    .filter(s =&gt; s.replace(/[\s|\t]+/,'').length &gt; 0)
-    // Perform switch on line output
-    .forEach((line) =&gt; {
-        switch(true){
-            // Marks beginning of sequence in common FASTA file
-            case /^&gt;/.test(line):
-            // Comments can only appear in header. If ; appears while reading a sequence,
-            // am most likely starting to read a new protein which laks the usual &gt; beginning.
-            // Be very strict about this condition.
-            case (/^;/.test(line) &amp;&amp; readingSequence === true &amp;&amp; readingHeaders === false):
-            // Case where ; sequence starts at beginning of file
-            case (/^;/.test(line) &amp;&amp; readingSequence === false &amp;&amp; readingHeaders === false):
-                readingHeaders = true;
-                readingSequence = false;
-
-                sequences = 1;
-
-                break;
-
-            // Some sequences terminate in *. Get rid of that and update the reading sequence condition.
-            case /^[A-Z]+\*$/.test(line) &amp;&amp; (
-                (readingSequence === false &amp;&amp; readingHeaders === true) ||
-                (readingSequence === true &amp;&amp; readingHeaders === false)
-            ):
-                readingSequence = false;
-                sequences = 2;
-
-                break;
-
-            // If repetition of characters, most likely sequence
-            // IMPORTANT!!! ONLY CAPITAL LETTERS!!!!
-            case /^[A-Z]+$/.test(line) &amp;&amp; (
-                (readingSequence === false &amp;&amp; readingHeaders === true) ||
-                (readingSequence === true &amp;&amp; readingHeaders === false)
-            ):
-                readingSequence = true;
-                readingHeaders = false;
-                sequences = 2;
-
-                break;
-
-            // If reading header and ; appears: it's a comment
-            case (/^;/.test(line) &amp;&amp; readingSequence === false &amp;&amp; readingHeaders === true):
-                break;
-
-            // Something weird happened!
-            default:
-                return false;
-        }
-    });
-
-return sequences === 2;
-};
-
-
-const extractFASTAHeaderInfo = (header) =&gt; {
-
-// GenBank	gb|accession|locus
-let geneBank = /gb\|\w+(\.\w+)\|.*/;
-// EMBL Data Library	emb|accession|locus
-// DDBJ, DNA Database of Japan	dbj|accession|locus
-// NBRF PIR	pir||entry
-// Protein Research Foundation	prf||name
-// SWISS-PROT	sp|accession|entry name
-let swissProt = /sp\|\w+\|.*/;
-// Brookhaven Protein Data Bank	pdb|entry|chain
-// Patents	pat|country|number
-// GenInfo Backbone Id	bbs|number
-// General database identifier	gnl|database|identifier
-// NCBI Reference Sequence	ref|accession|locus
-// Local Sequence identifier	lcl|identifier
-
-let matchers = [geneBank, swissProt];
-
-return matchers
-    .map(e =&gt; {
-        let current = header.match(e);
-        if (current !== undefined &amp;&amp; current !== null) {
-            current = current[0].split(&quot;|&quot;);
-
-            return {
-                &quot;database&quot;: current[0],
-                &quot;identifier&quot;: current[1],
-                &quot;locus&quot;: current[2]
-            };
-        } else {
-            return undefined;
-        }
-    })
-    .filter(e =&gt; e !== undefined);
-};</code></pre>
           <section id="Protein">
             <h1>Protein</h1>
             <h5 class="subheader"></h5>
@@ -224,6 +113,11 @@ return matchers
                 <td><p>A string representing the FASTA input</p></td>
               </tr>
               <tr>
+                <td>alphabet</td>
+                <td>String</td>
+                <td><p>A string representing the alphabet to use for validation.                                          Valid alphabets include <a href="http://www.bioinformatics.org/sms/iupac.html">&quot;IUPAC&quot;</a>,<br />                                         <a href="http://www.bioinformatics.org/sms2/iupac.html">&quot;IUPAC2&quot;</a>,<br />                                         <a href="http://www.bioinformatics.org/sms2/iupac.html">&quot;EXTENDED-IUPAC2&quot;</a>,<br />                                         <a href="https://blast.ncbi.nlm.nih.gov/Blast.cgi?CMD=Web&amp;PAGE_TYPE=BlastDocs&amp;DOC_TYPE=BlastHelp">&quot;PSI-BLAST&quot;</a>.<br />                                         Default is <a href="http://www.bioinformatics.org/sms/iupac.html">&quot;IUPAC&quot;</a>.</p></td>
+              </tr>
+              <tr>
                 <td>return</td>
                 <td>Promise</td>
                 <td><p>A promise that in it&#39;s <code>then</code> clause accepts an array parameter which can be decomposed (<code>then([p,r])</code>:<br />(p) being an array of Protein objects<br />(r) being an array containing the raw FASTA sequences parsed<br />Promise get&#39;s rejected (aka. <code>catch</code> clause) if some parsing error occurs.</p></td>
@@ -231,7 +125,7 @@ return matchers
             </tbody>
           </table>
           <div class="description"><p>Get Protein objects from Fasta string.</p></div>
-          <pre><code class="language-javascript">function fromFasta(text){
+          <pre><code class="language-javascript">function fromFasta(text, alphabet){
     if(typeof text !== 'string'){
         throw &quot;Passed invalid object to parse function.&quot;
     }
@@ -275,7 +169,7 @@ return matchers
                         break;
 
                     // Some sequences terminate in *. Get rid of that and update the reading sequence condition.
-                    case /^[A-Z]+\*$/.test(line) &amp;&amp; (
+                    case FASTAEndReadParser(alphabet).test(line) &amp;&amp; (
                         (readingSequence === false &amp;&amp; readingHeaders === true) ||
                         (readingSequence === true &amp;&amp; readingHeaders === false)
                     ):
@@ -287,7 +181,7 @@ return matchers
 
                     // If repetition of characters, most likely sequence
                     // IMPORTANT!!! ONLY CAPITAL LETTERS!!!!
-                    case /^[A-Z]+$/.test(line) &amp;&amp; (
+                    case FASTABodyParser(alphabet).test(line) &amp;&amp; (
                         (readingSequence === false &amp;&amp; readingHeaders === true) ||
                         (readingSequence === true &amp;&amp; readingHeaders === false)
                     ):
@@ -387,6 +281,11 @@ return matchers
                 <td><p>A string representing a protein sequence (A-Z)</p></td>
               </tr>
               <tr>
+                <td>alphabet</td>
+                <td>String</td>
+                <td><p>A string representing the alphabet to use for validation.                                          Valid alphabets include <a href="http://www.bioinformatics.org/sms/iupac.html">&quot;IUPAC&quot;</a>,<br />                                         <a href="http://www.bioinformatics.org/sms2/iupac.html">&quot;IUPAC2&quot;</a>,<br />                                         <a href="http://www.bioinformatics.org/sms2/iupac.html">&quot;EXTENDED-IUPAC2&quot;</a>,<br />                                         <a href="https://blast.ncbi.nlm.nih.gov/Blast.cgi?CMD=Web&amp;PAGE_TYPE=BlastDocs&amp;DOC_TYPE=BlastHelp">&quot;PSI-BLAST&quot;</a>.<br />                                         Default is <a href="http://www.bioinformatics.org/sms/iupac.html">&quot;IUPAC&quot;</a>.</p></td>
+              </tr>
+              <tr>
                 <td>return</td>
                 <td>Promise</td>
                 <td><p>A promise that in it&#39;s <code>then</code> clause accepts an array parameter which can be decomposed (<code>then([p,r])</code>:<br />(p) being an array containing one Protein object<br />(r) being an array containing one string representing the sequence matched<br />Promise get&#39;s rejected (aka. <code>catch</code> clause) if parsing doesn&#39;t identify candidates</p></td>
@@ -394,9 +293,9 @@ return matchers
             </tbody>
           </table>
           <div class="description"><p>Get Protein object from A-Z sequence</p></div>
-          <pre><code class="language-javascript">function fromSequence(sequence) {
+          <pre><code class="language-javascript">function fromSequence(sequence, alphabet) {
     return new Promise((resolve, reject) =&gt; {
-        let match = sequence.match(AASequence);
+        let match = sequence.match(sequenceParser(alphabet));
         if (match !== undefined &amp;&amp; match !== null) {
             match = match.map(e =&gt; e.replace(/\n/g,&quot;&quot;));
 
@@ -430,6 +329,11 @@ return matchers
                 <td><p>A string representing a FASTA sequence, an UniProt accession or a sequence in A-Z format</p></td>
               </tr>
               <tr>
+                <td>alphabet</td>
+                <td>String</td>
+                <td><p>A string representing the alphabet to use for validation.                                          Valid alphabets include <a href="http://www.bioinformatics.org/sms/iupac.html">&quot;IUPAC&quot;</a>,<br />                                         <a href="http://www.bioinformatics.org/sms2/iupac.html">&quot;IUPAC2&quot;</a>,<br />                                         <a href="http://www.bioinformatics.org/sms2/iupac.html">&quot;EXTENDED-IUPAC2&quot;</a>,<br />                                         <a href="https://blast.ncbi.nlm.nih.gov/Blast.cgi?CMD=Web&amp;PAGE_TYPE=BlastDocs&amp;DOC_TYPE=BlastHelp">&quot;PSI-BLAST&quot;</a>.<br />                                         Default is <a href="http://www.bioinformatics.org/sms/iupac.html">&quot;IUPAC&quot;</a>.</p></td>
+              </tr>
+              <tr>
                 <td>return</td>
                 <td>boolean</td>
                 <td><p>True if text can be parsed either as UniProt accession, AA sequence or FASTA file</p></td>
@@ -437,10 +341,10 @@ return matchers
             </tbody>
           </table>
           <div class="description"><p>Get Protein object from Accession number (via UniProt).</p></div>
-          <pre><code class="language-javascript">function validInput(text) {
+          <pre><code class="language-javascript">function validInput(text, alphabet) {
     return (text.match(accessionNumberRegex) !== null &amp;&amp; text.match(accessionNumberRegex) !== undefined) ||
-        (text.match(AASequence) !== null &amp;&amp; text.match(AASequence) !== undefined) ||
-        validFasta(text);
+        (text.match(sequenceParser(alphabet)) !== null &amp;&amp; text.match(sequenceParser(alphabet)) !== undefined) ||
+        validFasta(text, alphabet);
 }</code></pre>
           <section id="autodetect">
             <h1>autodetect</h1>
@@ -464,6 +368,11 @@ return matchers
                 <td><p>A string representing a FASTA sequence, an UniProt accession or a sequence in A-Z format</p></td>
               </tr>
               <tr>
+                <td>alphabet</td>
+                <td>String</td>
+                <td><p>A string representing the alphabet to use for validation.                                          Valid alphabets include <a href="http://www.bioinformatics.org/sms/iupac.html">&quot;IUPAC&quot;</a>,<br />                                         <a href="http://www.bioinformatics.org/sms2/iupac.html">&quot;IUPAC2&quot;</a>,<br />                                         <a href="http://www.bioinformatics.org/sms2/iupac.html">&quot;EXTENDED-IUPAC2&quot;</a>,<br />                                         <a href="https://blast.ncbi.nlm.nih.gov/Blast.cgi?CMD=Web&amp;PAGE_TYPE=BlastDocs&amp;DOC_TYPE=BlastHelp">&quot;PSI-BLAST&quot;</a>.<br />                                         Default is <a href="http://www.bioinformatics.org/sms/iupac.html">&quot;IUPAC&quot;</a>.</p></td>
+              </tr>
+              <tr>
                 <td>return</td>
                 <td>function</td>
                 <td><p>Returns the correct function to parse the text passed or <code>undefined</code> if text doesn&#39;t conform to any standard (AA, FASTA, UniProt Accession).</p></td>
@@ -471,16 +380,18 @@ return matchers
             </tbody>
           </table>
           <div class="description"><p>Get Protein object from Accession number (via UniProt).</p></div>
-          <pre><code class="language-javascript">function autodetect(text) {
+          <pre><code class="language-javascript">function autodetect(text, alphabet) {
     switch(true){
         case (text.match(accessionNumberRegex) !== null &amp;&amp; text.match(accessionNumberRegex) !== undefined):
             return fromAccession;
             break;
-        case (text.match(AASequence) !== null &amp;&amp; text.match(AASequence) !== undefined):
-            return fromSequence;
+        case (text.match(sequenceParser(alphabet)) !== null &amp;&amp; text.match(sequenceParser(alphabet)) !== undefined):
+            // Return nested function, so that alphabet is defined at this stage already (avoid inconsistency!)
+            return (text) =&gt; fromSequence(text, alphabet);
             break;
-        case validFasta(text):
-            return fromFasta;
+        case validFasta(text, alphabet):
+            // Return nested function, so that alphabet is defined at this stage already (avoid inconsistency!)
+            return (text) =&gt; fromFasta(text, alphabet);
             break;
         default:
             return undefined;

@@ -1,4 +1,5 @@
 import md5 from 'md5';
+import { extractFASTAHeaderInfo, FASTABodyParser, validFasta, FASTAEndReadParser, sequenceParser } from './fastaHelpers';
 
 let $;
 let request;
@@ -12,118 +13,6 @@ if (process.browser) {
 // Private functions and constants
 // From http://www.uniprot.org/help/accession_numbers
 const accessionNumberRegex = /^[OPQ][0-9][A-Z0-9]{3}[0-9]|[A-NR-Z][0-9]([A-Z][A-Z0-9]{2}[0-9]){1,2}$/;
-
-const AASequence = /^(([A-Z])+\n{0,1})+$/;
-
-const validFasta = (fasta) => {
-
-    /** sequences holds three stages
-     * 0: no sequences parsed --> invalid fasta
-     * 1: One sequence has been parsed header only (missing sequence part)
-     * 2: all sequences in FASTA file have header AND sequence
-     **/
-
-    let sequences = 0;
-
-    // this flags get updated when I'm reading a sequence. No comments should appear when I'm reading a sequence (see switch).
-    let readingSequence = false;
-    let readingHeaders = false;
-
-    fasta
-    // Split line by line
-        .split("\n")
-        // Get rid of lines only containing spaces or tabs (or nothing)
-        .filter(s => s.replace(/[\s|\t]+/,'').length > 0)
-        // Perform switch on line output
-        .forEach((line) => {
-            switch(true){
-                // Marks beginning of sequence in common FASTA file
-                case /^>/.test(line):
-                // Comments can only appear in header. If ; appears while reading a sequence,
-                // am most likely starting to read a new protein which laks the usual > beginning.
-                // Be very strict about this condition.
-                case (/^;/.test(line) && readingSequence === true && readingHeaders === false):
-                // Case where ; sequence starts at beginning of file
-                case (/^;/.test(line) && readingSequence === false && readingHeaders === false):
-                    readingHeaders = true;
-                    readingSequence = false;
-
-                    sequences = 1;
-
-                    break;
-
-                // Some sequences terminate in *. Get rid of that and update the reading sequence condition.
-                case /^[A-Z]+\*$/.test(line) && (
-                    (readingSequence === false && readingHeaders === true) ||
-                    (readingSequence === true && readingHeaders === false)
-                ):
-                    readingSequence = false;
-                    sequences = 2;
-
-                    break;
-
-                // If repetition of characters, most likely sequence
-                // IMPORTANT!!! ONLY CAPITAL LETTERS!!!!
-                case /^[A-Z]+$/.test(line) && (
-                    (readingSequence === false && readingHeaders === true) ||
-                    (readingSequence === true && readingHeaders === false)
-                ):
-                    readingSequence = true;
-                    readingHeaders = false;
-                    sequences = 2;
-
-                    break;
-
-                // If reading header and ; appears: it's a comment
-                case (/^;/.test(line) && readingSequence === false && readingHeaders === true):
-                    break;
-
-                // Something weird happened!
-                default:
-                    return false;
-            }
-        });
-
-    return sequences === 2;
-};
-
-
-const extractFASTAHeaderInfo = (header) => {
-
-    // GenBank	gb|accession|locus
-    let geneBank = /gb\|\w+(\.\w+)\|.*/;
-    // EMBL Data Library	emb|accession|locus
-    // DDBJ, DNA Database of Japan	dbj|accession|locus
-    // NBRF PIR	pir||entry
-    // Protein Research Foundation	prf||name
-    // SWISS-PROT	sp|accession|entry name
-    let swissProt = /sp\|\w+\|.*/;
-    // Brookhaven Protein Data Bank	pdb|entry|chain
-    // Patents	pat|country|number
-    // GenInfo Backbone Id	bbs|number
-    // General database identifier	gnl|database|identifier
-    // NCBI Reference Sequence	ref|accession|locus
-    // Local Sequence identifier	lcl|identifier
-
-    let matchers = [geneBank, swissProt];
-
-    return matchers
-        .map(e => {
-            let current = header.match(e);
-            if (current !== undefined && current !== null) {
-                current = current[0].split("|");
-
-                return {
-                    "database": current[0],
-                    "identifier": current[1],
-                    "locus": current[2]
-                };
-            } else {
-                return undefined;
-            }
-        })
-        .filter(e => e !== undefined);
-};
 
 
 /**
@@ -180,7 +69,14 @@ export class Protein {
  * Get Protein objects from Fasta string.
  *
  *
- * @param       {String}    text    A string representing the FASTA input
+ * @param           {String}    text        A string representing the FASTA input
+ * @param           {String}    alphabet    A string representing the alphabet to use for validation.
+ *                                          Valid alphabets include ["IUPAC"](http://www.bioinformatics.org/sms/iupac.html),
+ *                                          ["IUPAC2"](http://www.bioinformatics.org/sms2/iupac.html),
+ *                                          ["EXTENDED-IUPAC2"](http://www.bioinformatics.org/sms2/iupac.html),
+ *                                          ["PSI-BLAST"](https://blast.ncbi.nlm.nih.gov/Blast.cgi?CMD=Web&PAGE_TYPE=BlastDocs&DOC_TYPE=BlastHelp).
+ *                                          Default is ["IUPAC"](http://www.bioinformatics.org/sms/iupac.html).
+ *
  * @return      {Promise}   A promise that in it's `then` clause accepts an array parameter
  * which can be decomposed (`then([p,r])`:
  * (p) being an array of Protein objects
@@ -188,7 +84,7 @@ export class Protein {
  * Promise get's rejected (aka. `catch` clause) if some parsing error occurs.
  *
  */
-export function fromFasta(text){
+export function fromFasta(text, alphabet){
     if(typeof text !== 'string'){
         throw "Passed invalid object to parse function."
     }
@@ -232,7 +128,7 @@ export function fromFasta(text){
                         break;
 
                     // Some sequences terminate in *. Get rid of that and update the reading sequence condition.
-                    case /^[A-Z]+\*$/.test(line) && (
+                    case FASTAEndReadParser(alphabet).test(line) && (
                         (readingSequence === false && readingHeaders === true) ||
                         (readingSequence === true && readingHeaders === false)
                     ):
@@ -244,7 +140,7 @@ export function fromFasta(text){
 
                     // If repetition of characters, most likely sequence
                     // IMPORTANT!!! ONLY CAPITAL LETTERS!!!!
-                    case /^[A-Z]+$/.test(line) && (
+                    case FASTABodyParser(alphabet).test(line) && (
                         (readingSequence === false && readingHeaders === true) ||
                         (readingSequence === true && readingHeaders === false)
                     ):
@@ -327,6 +223,12 @@ export function fromAccession(accession) {
  *
  *
  * @param           {String}    sequence   A string representing a protein sequence (A-Z)
+ * @param           {String}    alphabet   A string representing the alphabet to use for validation.
+ *                                          Valid alphabets include ["IUPAC"](http://www.bioinformatics.org/sms/iupac.html),
+ *                                          ["IUPAC2"](http://www.bioinformatics.org/sms2/iupac.html),
+ *                                          ["EXTENDED-IUPAC2"](http://www.bioinformatics.org/sms2/iupac.html),
+ *                                          ["PSI-BLAST"](https://blast.ncbi.nlm.nih.gov/Blast.cgi?CMD=Web&PAGE_TYPE=BlastDocs&DOC_TYPE=BlastHelp).
+ *                                          Default is ["IUPAC"](http://www.bioinformatics.org/sms/iupac.html).
  *
  * @return          {Promise}   A promise that in it's `then` clause accepts an array parameter
  * which can be decomposed (`then([p,r])`:
@@ -334,9 +236,9 @@ export function fromAccession(accession) {
  * (r) being an array containing one string representing the sequence matched
  * Promise get's rejected (aka. `catch` clause) if parsing doesn't identify candidates
  */
-export function fromSequence(sequence) {
+export function fromSequence(sequence, alphabet) {
     return new Promise((resolve, reject) => {
-        let match = sequence.match(AASequence);
+        let match = sequence.match(sequenceParser(alphabet));
         if (match !== undefined && match !== null) {
             match = match.map(e => e.replace(/\n/g,""));
 
@@ -353,13 +255,19 @@ export function fromSequence(sequence) {
  *
  *
  * @param           {String}    text   A string representing a FASTA sequence, an UniProt accession or a sequence in A-Z format
+ * @param           {String}    alphabet   A string representing the alphabet to use for validation.
+ *                                          Valid alphabets include ["IUPAC"](http://www.bioinformatics.org/sms/iupac.html),
+ *                                          ["IUPAC2"](http://www.bioinformatics.org/sms2/iupac.html),
+ *                                          ["EXTENDED-IUPAC2"](http://www.bioinformatics.org/sms2/iupac.html),
+ *                                          ["PSI-BLAST"](https://blast.ncbi.nlm.nih.gov/Blast.cgi?CMD=Web&PAGE_TYPE=BlastDocs&DOC_TYPE=BlastHelp).
+ *                                          Default is ["IUPAC"](http://www.bioinformatics.org/sms/iupac.html).
  *
  * @return          {boolean}   True if text can be parsed either as UniProt accession, AA sequence or FASTA file
  */
-export function validInput(text) {
+export function validInput(text, alphabet) {
     return (text.match(accessionNumberRegex) !== null && text.match(accessionNumberRegex) !== undefined) ||
-        (text.match(AASequence) !== null && text.match(AASequence) !== undefined) ||
-        validFasta(text);
+        (text.match(sequenceParser(alphabet)) !== null && text.match(sequenceParser(alphabet)) !== undefined) ||
+        validFasta(text, alphabet);
 }
 
 
@@ -368,19 +276,27 @@ export function validInput(text) {
  *
  *
  * @param           {String}    text   A string representing a FASTA sequence, an UniProt accession or a sequence in A-Z format
+ * @param           {String}    alphabet   A string representing the alphabet to use for validation.
+ *                                          Valid alphabets include ["IUPAC"](http://www.bioinformatics.org/sms/iupac.html),
+ *                                          ["IUPAC2"](http://www.bioinformatics.org/sms2/iupac.html),
+ *                                          ["EXTENDED-IUPAC2"](http://www.bioinformatics.org/sms2/iupac.html),
+ *                                          ["PSI-BLAST"](https://blast.ncbi.nlm.nih.gov/Blast.cgi?CMD=Web&PAGE_TYPE=BlastDocs&DOC_TYPE=BlastHelp).
+ *                                          Default is ["IUPAC"](http://www.bioinformatics.org/sms/iupac.html).
  *
  * @return          {function}   Returns the correct function to parse the text passed or `undefined` if text doesn't conform to any standard (AA, FASTA, UniProt Accession).
  */
-export function autodetect(text) {
+export function autodetect(text, alphabet) {
     switch(true){
         case (text.match(accessionNumberRegex) !== null && text.match(accessionNumberRegex) !== undefined):
             return fromAccession;
             break;
-        case (text.match(AASequence) !== null && text.match(AASequence) !== undefined):
-            return fromSequence;
+        case (text.match(sequenceParser(alphabet)) !== null && text.match(sequenceParser(alphabet)) !== undefined):
+            // Return nested function, so that alphabet is defined at this stage already (avoid inconsistency!)
+            return (text) => fromSequence(text, alphabet);
             break;
-        case validFasta(text):
-            return fromFasta;
+        case validFasta(text, alphabet):
+            // Return nested function, so that alphabet is defined at this stage already (avoid inconsistency!)
+            return (text) => fromFasta(text, alphabet);
             break;
         default:
             return undefined;

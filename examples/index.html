@@ -74,7 +74,7 @@ KLAHRLREFG`;
         });
 
 
-    Protein.fromFasta(fasta)
+    Protein.fromFasta(fasta, "PSI-BLAST")
         .then(([proteins, parsedFasta]) => {
             createElement("-----------PROTEINS-FASTA-----------");
             proteins.forEach(e => createElement(JSON.stringify(e)));
