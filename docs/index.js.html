@@ -243,7 +243,7 @@
           </table>
           <div class="description"><p>Get Protein object from Accession number (via UniProt).</p></div>
           <pre><code class="language-javascript">function fromAccession(accession) {
-    if(!accessionNumberRegex.test(text)){
+    if(!accessionNumberRegex.test(accession)){
         return new Promise((resolve, reject) =&gt; {
             return reject();
         });
