@@ -181,7 +181,7 @@ export function fromFasta(text, alphabet){
  * Promise get's rejected (aka. `catch` clause) if 5** or 4** response from server.
  */
 export function fromAccession(accession) {
-    if(!accessionNumberRegex.test(text)){
+    if(!accessionNumberRegex.test(accession)){
         return new Promise((resolve, reject) => {
             return reject();
         });
