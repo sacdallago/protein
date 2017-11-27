@@ -1,7 +1,7 @@
 {
     "name": "protein",
     "description": "A collecection of parsers for proteins",
-    "version": "0.0.1",
+    "version": "0.1.0",
     "homepage": "https://github.com/sacdallago/protein",
     "repository": {
         "type": "git",
