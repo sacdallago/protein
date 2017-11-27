@@ -140,8 +140,9 @@ const sequenceParser = alphabet => {
             );
         case "IUPAC":
         case "NATURAL":
+        case undefined:
         default:
-            return (/^(([ACDEFGHIKLMNPQRSTVWY])+\n{0,1})+$/
+            return (/^([ACDEFGHIKLMNPQRSTVWY])+$/
             );
     }
 };
@@ -159,6 +160,7 @@ const FASTABodyParser = alphabet => {
             );
         case "IUPAC":
         case "NATURAL":
+        case undefined:
         default:
             return (/^([ACDEFGHIKLMNPQRSTVWY])+$/
             );
@@ -178,6 +180,7 @@ const FASTAEndReadParser = alphabet => {
             );
         case "IUPAC":
         case "NATURAL":
+        case undefined:
         default:
             return (/^([ACDEFGHIKLMNPQRSTVWY])+\*$/
             );
@@ -438,7 +441,7 @@ function fromFasta(text, alphabet) {
  * Promise get's rejected (aka. `catch` clause) if 5** or 4** response from server.
  */
 function fromAccession(accession) {
-    if (accession.match(accessionNumberRegex) === null || accession.match(accessionNumberRegex) === undefined) {
+    if (!accessionNumberRegex.test(text)) {
         return new Promise((resolve, reject) => {
             return reject();
         });
@@ -491,7 +494,6 @@ function fromSequence(sequence, alphabet) {
     });
 }
 
-// TODO: auto detect input
 /**
  * Get Protein object from Accession number (via UniProt).
  *
@@ -507,7 +509,7 @@ function fromSequence(sequence, alphabet) {
  * @return          {boolean}   True if text can be parsed either as UniProt accession, AA sequence or FASTA file
  */
 function validInput(text, alphabet) {
-    return text.match(accessionNumberRegex) !== null && text.match(accessionNumberRegex) !== undefined || text.match(sequenceParser(alphabet)) !== null && text.match(sequenceParser(alphabet)) !== undefined || validFasta(text, alphabet);
+    return accessionNumberRegex.test(text) || sequenceParser(alphabet).test(text) || validFasta(text, alphabet);
 }
 
 /**
@@ -526,10 +528,10 @@ function validInput(text, alphabet) {
  */
 function autodetect(text, alphabet) {
     switch (true) {
-        case text.match(accessionNumberRegex) !== null && text.match(accessionNumberRegex) !== undefined:
+        case accessionNumberRegex.test(text):
             return fromAccession;
             break;
-        case text.match(sequenceParser(alphabet)) !== null && text.match(sequenceParser(alphabet)) !== undefined:
+        case sequenceParser(alphabet).test(text):
             // Return nested function, so that alphabet is defined at this stage already (avoid inconsistency!)
             return text => fromSequence(text, alphabet);
             break;
