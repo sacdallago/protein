@@ -16925,15 +16925,21 @@ module.exports = bytesToUuid;
 "use strict";
 
 
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
 Object.defineProperty(exports, '__esModule', { value: true });
 
 function _interopDefault(ex) {
-    return ex && typeof ex === 'object' && 'default' in ex ? ex['default'] : ex;
+    return ex && (typeof ex === 'undefined' ? 'undefined' : _typeof(ex)) === 'object' && 'default' in ex ? ex['default'] : ex;
 }
 
 var md5 = _interopDefault(__webpack_require__(89));
 
-const sequenceParser = alphabet => {
+var sequenceParser = function sequenceParser(alphabet) {
     switch (alphabet) {
         case "PSI-BLAST":
             return (/^(([A-Z*\-])+\n{0,1})+$/
@@ -16953,7 +16959,7 @@ const sequenceParser = alphabet => {
     }
 };
 
-const FASTABodyParser = alphabet => {
+var FASTABodyParser = function FASTABodyParser(alphabet) {
     switch (alphabet) {
         case "PSI-BLAST":
             return (/^([A-Z\-])+$/
@@ -16973,7 +16979,7 @@ const FASTABodyParser = alphabet => {
     }
 };
 
-const FASTAEndReadParser = alphabet => {
+var FASTAEndReadParser = function FASTAEndReadParser(alphabet) {
     switch (alphabet) {
         case "PSI-BLAST":
             return (/^([A-Z\-])+\*$/
@@ -16993,7 +16999,7 @@ const FASTAEndReadParser = alphabet => {
     }
 };
 
-const validFasta = (fasta, alphabet) => {
+var validFasta = function validFasta(fasta, alphabet) {
 
     // sequences holds three stages
     // 0: no sequences parsed --> invalid fasta
@@ -17001,19 +17007,21 @@ const validFasta = (fasta, alphabet) => {
     // 2: all sequences in FASTA file have header AND sequence
 
 
-    let sequences = 0;
+    var sequences = 0;
 
     // this flags get updated when I'm reading a sequence. No comments should appear when I'm reading a sequence (see switch).
-    let readingSequence = false;
-    let readingHeaders = false;
+    var readingSequence = false;
+    var readingHeaders = false;
 
     fasta
     // Split line by line
     .split("\n")
     // Get rid of lines only containing spaces or tabs (or nothing)
-    .filter(s => s.replace(/[\s|\t]+/, '').length > 0)
+    .filter(function (s) {
+        return s.replace(/[\s|\t]+/, '').length > 0;
+    })
     // Perform switch on line output
-    .forEach(line => {
+    .forEach(function (line) {
         switch (true) {
             // Marks beginning of sequence in common FASTA file
             case /^>/.test(line):
@@ -17059,16 +17067,16 @@ const validFasta = (fasta, alphabet) => {
     return sequences === 2;
 };
 
-const extractFASTAHeaderInfo = header => {
+var extractFASTAHeaderInfo = function extractFASTAHeaderInfo(header) {
 
     // GenBank	gb|accession|locus
-    let geneBank = /gb\|\w+(\.\w+)\|.*/;
+    var geneBank = /gb\|\w+(\.\w+)\|.*/;
     // EMBL Data Library	emb|accession|locus
     // DDBJ, DNA Database of Japan	dbj|accession|locus
     // NBRF PIR	pir||entry
     // Protein Research Foundation	prf||name
     // SWISS-PROT	sp|accession|entry name
-    let swissProt = /sp\|\w+\|.*/;
+    var swissProt = /sp\|\w+\|.*/;
     // Brookhaven Protein Data Bank	pdb|entry|chain
     // Patents	pat|country|number
     // GenInfo Backbone Id	bbs|number
@@ -17076,10 +17084,10 @@ const extractFASTAHeaderInfo = header => {
     // NCBI Reference Sequence	ref|accession|locus
     // Local Sequence identifier	lcl|identifier
 
-    let matchers = [geneBank, swissProt];
+    var matchers = [geneBank, swissProt];
 
-    return matchers.map(e => {
-        let current = header.match(e);
+    return matchers.map(function (e) {
+        var current = header.match(e);
         if (current !== undefined && current !== null) {
             current = current[0].split("|");
 
@@ -17091,10 +17099,12 @@ const extractFASTAHeaderInfo = header => {
         } else {
             return undefined;
         }
-    }).filter(e => e !== undefined);
+    }).filter(function (e) {
+        return e !== undefined;
+    });
 };
 
-let request;
+var request = void 0;
 
 {
     request = __webpack_require__(92);
@@ -17102,46 +17112,55 @@ let request;
 
 // Private functions and constants
 // From http://www.uniprot.org/help/accession_numbers
-const accessionNumberRegex = /^[OPQ][0-9][A-Z0-9]{3}[0-9]|[A-NR-Z][0-9]([A-Z][A-Z0-9]{2}[0-9]){1,2}$/;
+var accessionNumberRegex = /^[OPQ][0-9][A-Z0-9]{3}[0-9]|[A-NR-Z][0-9]([A-Z][A-Z0-9]{2}[0-9]){1,2}$/;
 
 /**
  * Class Protein exports functions to parse specific text formats
  */
-class Protein {
 
-    constructor(sequence) {
+var Protein = function () {
+    function Protein(sequence) {
+        _classCallCheck(this, Protein);
+
         this.sequence = sequence;
         this.hash = md5(sequence);
     }
 
-    setUniprotData(uniprotData) {
-        this.uniprotData = uniprotData;
-    }
-
-    retrieveUniprotData(accession) {
-        let url = 'https://www.ebi.ac.uk/proteins/api/proteins/' + accession;
-        let self = this;
-
-        {
-            return new Promise((resolve, reject) => {
-                request.get(url, (error, response, body) => {
-                    if (error) {
-                        reject(error);
-                    } else {
-                        let protein = JSON.parse(body);
-
-                        self.uniprotData = protein;
-                        resolve(protein);
-                    }
-                });
-            });
+    _createClass(Protein, [{
+        key: 'setUniprotData',
+        value: function setUniprotData(uniprotData) {
+            this.uniprotData = uniprotData;
         }
-    }
+    }, {
+        key: 'retrieveUniprotData',
+        value: function retrieveUniprotData(accession) {
+            var url = 'https://www.ebi.ac.uk/proteins/api/proteins/' + accession;
+            var self = this;
 
-    getUniprotData(uniprotData) {
-        return this.uniprotData;
-    }
-}
+            {
+                return new Promise(function (resolve, reject) {
+                    request.get(url, function (error, response, body) {
+                        if (error) {
+                            reject(error);
+                        } else {
+                            var protein = JSON.parse(body);
+
+                            self.uniprotData = protein;
+                            resolve(protein);
+                        }
+                    });
+                });
+            }
+        }
+    }, {
+        key: 'getUniprotData',
+        value: function getUniprotData(uniprotData) {
+            return this.uniprotData;
+        }
+    }]);
+
+    return Protein;
+}();
 
 /**
  * Get Protein objects from Fasta string.
@@ -17162,6 +17181,8 @@ class Protein {
  * Promise get's rejected (aka. `catch` clause) if some parsing error occurs.
  *
  */
+
+
 function fromFasta(text, alphabet) {
     if (typeof text !== 'string') {
         throw "Passed invalid object to parse function.";
@@ -17169,20 +17190,22 @@ function fromFasta(text, alphabet) {
         throw "Passed an empty string.";
     }
 
-    let sequences = [];
+    var sequences = [];
 
     // this flag get's updated when I'm reading a sequence. No comments should appear when I'm reading a sequence (see switch).
-    let readingSequence = false;
-    let readingHeaders = false;
+    var readingSequence = false;
+    var readingHeaders = false;
 
-    return new Promise((resolve, reject) => {
+    return new Promise(function (resolve, reject) {
         text
         // Split line by line
         .split("\n")
         // Get rid of lines only containing spaces or tabs (or nothing)
-        .filter(s => s.replace(/[\s|\t]+/, '').length > 0)
+        .filter(function (s) {
+            return s.replace(/[\s|\t]+/, '').length > 0;
+        })
         // Perform switch on line output
-        .forEach(line => {
+        .forEach(function (line) {
             switch (true) {
                 // Marks beginning of sequence in common FASTA file
                 case /^>/.test(line):
@@ -17233,7 +17256,7 @@ function fromFasta(text, alphabet) {
             }
         });
 
-        return resolve([sequences.map(s => {
+        return resolve([sequences.map(function (s) {
             return new Protein(s.sequence);
         }), sequences]);
     });
@@ -17253,21 +17276,21 @@ function fromFasta(text, alphabet) {
  */
 function fromAccession(accession) {
     if (!accessionNumberRegex.test(accession)) {
-        return new Promise((resolve, reject) => {
+        return new Promise(function (resolve, reject) {
             return reject();
         });
     }
 
-    let url = 'https://www.ebi.ac.uk/proteins/api/proteins/' + accession;
+    var url = 'https://www.ebi.ac.uk/proteins/api/proteins/' + accession;
 
     {
-        return new Promise((resolve, reject) => {
-            request.get(url, (error, response, body) => {
+        return new Promise(function (resolve, reject) {
+            request.get(url, function (error, response, body) {
                 if (error) {
                     return reject(error);
                 } else {
-                    let protein = JSON.parse(body);
-                    let p = new Protein(protein.sequence.sequence);
+                    var protein = JSON.parse(body);
+                    var p = new Protein(protein.sequence.sequence);
                     p.setUniprotData(protein);
 
                     return resolve([[p], [protein]]);
@@ -17296,10 +17319,12 @@ function fromAccession(accession) {
  * Promise get's rejected (aka. `catch` clause) if parsing doesn't identify candidates
  */
 function fromSequence(sequence, alphabet) {
-    return new Promise((resolve, reject) => {
-        let match = sequence.match(sequenceParser(alphabet));
+    return new Promise(function (resolve, reject) {
+        var match = sequence.match(sequenceParser(alphabet));
         if (match !== undefined && match !== null) {
-            match = match.map(e => e.replace(/\n/g, ""));
+            match = match.map(function (e) {
+                return e.replace(/\n/g, "");
+            });
 
             return resolve([[new Protein(match[0])], [match[0]]]);
         } else {
@@ -17347,11 +17372,15 @@ function autodetect(text, alphabet) {
             break;
         case sequenceParser(alphabet).test(text):
             // Return nested function, so that alphabet is defined at this stage already (avoid inconsistency!)
-            return text => fromSequence(text, alphabet);
+            return function (text) {
+                return fromSequence(text, alphabet);
+            };
             break;
         case validFasta(text, alphabet):
             // Return nested function, so that alphabet is defined at this stage already (avoid inconsistency!)
-            return text => fromFasta(text, alphabet);
+            return function (text) {
+                return fromFasta(text, alphabet);
+            };
             break;
         default:
             return undefined;
@@ -19351,7 +19380,7 @@ MemoryCookieStore.prototype.getAllCookies = function(cb) {
 /* 95 */
 /***/ (function(module, exports) {
 
-module.exports = {"_from":"tough-cookie@~2.3.3","_id":"tough-cookie@2.3.3","_inBundle":false,"_integrity":"sha1-C2GKVWW23qkL80JdBNVe3EdadWE=","_location":"/tough-cookie","_phantomChildren":{},"_requested":{"type":"range","registry":true,"raw":"tough-cookie@~2.3.3","name":"tough-cookie","escapedName":"tough-cookie","rawSpec":"~2.3.3","saveSpec":null,"fetchSpec":"~2.3.3"},"_requiredBy":["/request"],"_resolved":"https://registry.npmjs.org/tough-cookie/-/tough-cookie-2.3.3.tgz","_shasum":"0b618a5565b6dea90bf3425d04d55edc475a7561","_spec":"tough-cookie@~2.3.3","_where":"/Users/chdallago/git/protein/node_modules/request","author":{"name":"Jeremy Stashewsky","email":"jstashewsky@salesforce.com"},"bugs":{"url":"https://github.com/salesforce/tough-cookie/issues"},"bundleDependencies":false,"contributors":[{"name":"Alexander Savin"},{"name":"Ian Livingstone"},{"name":"Ivan Nikulin"},{"name":"Lalit Kapoor"},{"name":"Sam Thompson"},{"name":"Sebastian Mayr"}],"dependencies":{"punycode":"^1.4.1"},"deprecated":false,"description":"RFC6265 Cookies and Cookie Jar for node.js","devDependencies":{"async":"^1.4.2","string.prototype.repeat":"^0.2.0","vows":"^0.8.1"},"engines":{"node":">=0.8"},"files":["lib"],"homepage":"https://github.com/salesforce/tough-cookie","keywords":["HTTP","cookie","cookies","set-cookie","cookiejar","jar","RFC6265","RFC2965"],"license":"BSD-3-Clause","main":"./lib/cookie","name":"tough-cookie","repository":{"type":"git","url":"git://github.com/salesforce/tough-cookie.git"},"scripts":{"suffixup":"curl -o public_suffix_list.dat https://publicsuffix.org/list/public_suffix_list.dat && ./generate-pubsuffix.js","test":"vows test/*_test.js"},"version":"2.3.3"}
+module.exports = {"_args":[["tough-cookie@2.3.3","/Users/chdallago/git/protein"]],"_from":"tough-cookie@2.3.3","_id":"tough-cookie@2.3.3","_inBundle":false,"_integrity":"sha1-C2GKVWW23qkL80JdBNVe3EdadWE=","_location":"/tough-cookie","_phantomChildren":{},"_requested":{"type":"version","registry":true,"raw":"tough-cookie@2.3.3","name":"tough-cookie","escapedName":"tough-cookie","rawSpec":"2.3.3","saveSpec":null,"fetchSpec":"2.3.3"},"_requiredBy":["/request"],"_resolved":"https://registry.npmjs.org/tough-cookie/-/tough-cookie-2.3.3.tgz","_spec":"2.3.3","_where":"/Users/chdallago/git/protein","author":{"name":"Jeremy Stashewsky","email":"jstashewsky@salesforce.com"},"bugs":{"url":"https://github.com/salesforce/tough-cookie/issues"},"contributors":[{"name":"Alexander Savin"},{"name":"Ian Livingstone"},{"name":"Ivan Nikulin"},{"name":"Lalit Kapoor"},{"name":"Sam Thompson"},{"name":"Sebastian Mayr"}],"dependencies":{"punycode":"^1.4.1"},"description":"RFC6265 Cookies and Cookie Jar for node.js","devDependencies":{"async":"^1.4.2","string.prototype.repeat":"^0.2.0","vows":"^0.8.1"},"engines":{"node":">=0.8"},"files":["lib"],"homepage":"https://github.com/salesforce/tough-cookie","keywords":["HTTP","cookie","cookies","set-cookie","cookiejar","jar","RFC6265","RFC2965"],"license":"BSD-3-Clause","main":"./lib/cookie","name":"tough-cookie","repository":{"type":"git","url":"git://github.com/salesforce/tough-cookie.git"},"scripts":{"suffixup":"curl -o public_suffix_list.dat https://publicsuffix.org/list/public_suffix_list.dat && ./generate-pubsuffix.js","test":"vows test/*_test.js"},"version":"2.3.3"}
 
 /***/ }),
 /* 96 */
@@ -22193,7 +22222,7 @@ exports.badImplementation = function (message, data) {
 /* 106 */
 /***/ (function(module, exports) {
 
-module.exports = {"_from":"hawk@~6.0.2","_id":"hawk@6.0.2","_inBundle":false,"_integrity":"sha512-miowhl2+U7Qle4vdLqDdPt9m09K6yZhkLDTWGoUiUzrQCn+mHHSmfJgAyGaLRZbPmTqfFFjRV1QWCW0VWUJBbQ==","_location":"/hawk","_phantomChildren":{},"_requested":{"type":"range","registry":true,"raw":"hawk@~6.0.2","name":"hawk","escapedName":"hawk","rawSpec":"~6.0.2","saveSpec":null,"fetchSpec":"~6.0.2"},"_requiredBy":["/request"],"_resolved":"https://registry.npmjs.org/hawk/-/hawk-6.0.2.tgz","_shasum":"af4d914eb065f9b5ce4d9d11c1cb2126eecc3038","_spec":"hawk@~6.0.2","_where":"/Users/chdallago/git/protein/node_modules/request","author":{"name":"Eran Hammer","email":"eran@hammer.io","url":"http://hueniverse.com"},"babel":{"presets":["es2015"]},"browser":"dist/browser.js","bugs":{"url":"https://github.com/hueniverse/hawk/issues"},"bundleDependencies":false,"dependencies":{"boom":"4.x.x","cryptiles":"3.x.x","hoek":"4.x.x","sntp":"2.x.x"},"deprecated":false,"description":"HTTP Hawk Authentication Scheme","devDependencies":{"babel-cli":"^6.1.2","babel-preset-es2015":"^6.1.2","code":"4.x.x","lab":"14.x.x"},"engines":{"node":">=4.5.0"},"homepage":"https://github.com/hueniverse/hawk#readme","keywords":["http","authentication","scheme","hawk"],"license":"BSD-3-Clause","main":"lib/index.js","name":"hawk","repository":{"type":"git","url":"git://github.com/hueniverse/hawk.git"},"scripts":{"build-client":"mkdir -p dist; babel lib/browser.js --out-file dist/browser.js","prepublish":"npm run-script build-client","test":"lab -a code -t 100 -L","test-cov-html":"lab -a code -r html -o coverage.html"},"version":"6.0.2"}
+module.exports = {"_args":[["hawk@6.0.2","/Users/chdallago/git/protein"]],"_from":"hawk@6.0.2","_id":"hawk@6.0.2","_inBundle":false,"_integrity":"sha512-miowhl2+U7Qle4vdLqDdPt9m09K6yZhkLDTWGoUiUzrQCn+mHHSmfJgAyGaLRZbPmTqfFFjRV1QWCW0VWUJBbQ==","_location":"/hawk","_phantomChildren":{},"_requested":{"type":"version","registry":true,"raw":"hawk@6.0.2","name":"hawk","escapedName":"hawk","rawSpec":"6.0.2","saveSpec":null,"fetchSpec":"6.0.2"},"_requiredBy":["/request"],"_resolved":"https://registry.npmjs.org/hawk/-/hawk-6.0.2.tgz","_spec":"6.0.2","_where":"/Users/chdallago/git/protein","author":{"name":"Eran Hammer","email":"eran@hammer.io","url":"http://hueniverse.com"},"babel":{"presets":["es2015"]},"browser":"dist/browser.js","bugs":{"url":"https://github.com/hueniverse/hawk/issues"},"dependencies":{"boom":"4.x.x","cryptiles":"3.x.x","hoek":"4.x.x","sntp":"2.x.x"},"description":"HTTP Hawk Authentication Scheme","devDependencies":{"babel-cli":"^6.1.2","babel-preset-es2015":"^6.1.2","code":"4.x.x","lab":"14.x.x"},"engines":{"node":">=4.5.0"},"homepage":"https://github.com/hueniverse/hawk#readme","keywords":["http","authentication","scheme","hawk"],"license":"BSD-3-Clause","main":"lib/index.js","name":"hawk","repository":{"type":"git","url":"git://github.com/hueniverse/hawk.git"},"scripts":{"build-client":"mkdir -p dist; babel lib/browser.js --out-file dist/browser.js","prepublish":"npm run-script build-client","test":"lab -a code -t 100 -L","test-cov-html":"lab -a code -r html -o coverage.html"},"version":"6.0.2"}
 
 /***/ }),
 /* 107 */

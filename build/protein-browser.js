@@ -119,15 +119,21 @@ module.exports = charenc;
 "use strict";
 
 
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
 Object.defineProperty(exports, '__esModule', { value: true });
 
 function _interopDefault(ex) {
-    return ex && typeof ex === 'object' && 'default' in ex ? ex['default'] : ex;
+    return ex && (typeof ex === 'undefined' ? 'undefined' : _typeof(ex)) === 'object' && 'default' in ex ? ex['default'] : ex;
 }
 
 var md5 = _interopDefault(__webpack_require__(2));
 
-const sequenceParser = alphabet => {
+var sequenceParser = function sequenceParser(alphabet) {
     switch (alphabet) {
         case "PSI-BLAST":
             return (/^(([A-Z*\-])+\n{0,1})+$/
@@ -147,7 +153,7 @@ const sequenceParser = alphabet => {
     }
 };
 
-const FASTABodyParser = alphabet => {
+var FASTABodyParser = function FASTABodyParser(alphabet) {
     switch (alphabet) {
         case "PSI-BLAST":
             return (/^([A-Z\-])+$/
@@ -167,7 +173,7 @@ const FASTABodyParser = alphabet => {
     }
 };
 
-const FASTAEndReadParser = alphabet => {
+var FASTAEndReadParser = function FASTAEndReadParser(alphabet) {
     switch (alphabet) {
         case "PSI-BLAST":
             return (/^([A-Z\-])+\*$/
@@ -187,7 +193,7 @@ const FASTAEndReadParser = alphabet => {
     }
 };
 
-const validFasta = (fasta, alphabet) => {
+var validFasta = function validFasta(fasta, alphabet) {
 
     // sequences holds three stages
     // 0: no sequences parsed --> invalid fasta
@@ -195,19 +201,21 @@ const validFasta = (fasta, alphabet) => {
     // 2: all sequences in FASTA file have header AND sequence
 
 
-    let sequences = 0;
+    var sequences = 0;
 
     // this flags get updated when I'm reading a sequence. No comments should appear when I'm reading a sequence (see switch).
-    let readingSequence = false;
-    let readingHeaders = false;
+    var readingSequence = false;
+    var readingHeaders = false;
 
     fasta
     // Split line by line
     .split("\n")
     // Get rid of lines only containing spaces or tabs (or nothing)
-    .filter(s => s.replace(/[\s|\t]+/, '').length > 0)
+    .filter(function (s) {
+        return s.replace(/[\s|\t]+/, '').length > 0;
+    })
     // Perform switch on line output
-    .forEach(line => {
+    .forEach(function (line) {
         switch (true) {
             // Marks beginning of sequence in common FASTA file
             case /^>/.test(line):
@@ -253,16 +261,16 @@ const validFasta = (fasta, alphabet) => {
     return sequences === 2;
 };
 
-const extractFASTAHeaderInfo = header => {
+var extractFASTAHeaderInfo = function extractFASTAHeaderInfo(header) {
 
     // GenBank	gb|accession|locus
-    let geneBank = /gb\|\w+(\.\w+)\|.*/;
+    var geneBank = /gb\|\w+(\.\w+)\|.*/;
     // EMBL Data Library	emb|accession|locus
     // DDBJ, DNA Database of Japan	dbj|accession|locus
     // NBRF PIR	pir||entry
     // Protein Research Foundation	prf||name
     // SWISS-PROT	sp|accession|entry name
-    let swissProt = /sp\|\w+\|.*/;
+    var swissProt = /sp\|\w+\|.*/;
     // Brookhaven Protein Data Bank	pdb|entry|chain
     // Patents	pat|country|number
     // GenInfo Backbone Id	bbs|number
@@ -270,10 +278,10 @@ const extractFASTAHeaderInfo = header => {
     // NCBI Reference Sequence	ref|accession|locus
     // Local Sequence identifier	lcl|identifier
 
-    let matchers = [geneBank, swissProt];
+    var matchers = [geneBank, swissProt];
 
-    return matchers.map(e => {
-        let current = header.match(e);
+    return matchers.map(function (e) {
+        var current = header.match(e);
         if (current !== undefined && current !== null) {
             current = current[0].split("|");
 
@@ -285,52 +293,63 @@ const extractFASTAHeaderInfo = header => {
         } else {
             return undefined;
         }
-    }).filter(e => e !== undefined);
+    }).filter(function (e) {
+        return e !== undefined;
+    });
 };
 
-let $;
+var $ = void 0;
 {
     $ = __webpack_require__(5);
 }
 
 // Private functions and constants
 // From http://www.uniprot.org/help/accession_numbers
-const accessionNumberRegex = /^[OPQ][0-9][A-Z0-9]{3}[0-9]|[A-NR-Z][0-9]([A-Z][A-Z0-9]{2}[0-9]){1,2}$/;
+var accessionNumberRegex = /^[OPQ][0-9][A-Z0-9]{3}[0-9]|[A-NR-Z][0-9]([A-Z][A-Z0-9]{2}[0-9]){1,2}$/;
 
 /**
  * Class Protein exports functions to parse specific text formats
  */
-class Protein {
 
-    constructor(sequence) {
+var Protein = function () {
+    function Protein(sequence) {
+        _classCallCheck(this, Protein);
+
         this.sequence = sequence;
         this.hash = md5(sequence);
     }
 
-    setUniprotData(uniprotData) {
-        this.uniprotData = uniprotData;
-    }
-
-    retrieveUniprotData(accession) {
-        let url = 'https://www.ebi.ac.uk/proteins/api/proteins/' + accession;
-        let self = this;
-
-        {
-            return new Promise((resolve, reject) => {
-                $.get(url, protein => {
-                    self.uniprotData = protein;
-                    resolve(protein);
-                }).fail(() => {
-                    reject();
-                });
-            });
+    _createClass(Protein, [{
+        key: 'setUniprotData',
+        value: function setUniprotData(uniprotData) {
+            this.uniprotData = uniprotData;
         }
-    }
+    }, {
+        key: 'retrieveUniprotData',
+        value: function retrieveUniprotData(accession) {
+            var url = 'https://www.ebi.ac.uk/proteins/api/proteins/' + accession;
+            var self = this;
 
-    getUniprotData(uniprotData) {
-        return this.uniprotData;
-    }
-}
+            {
+                return new Promise(function (resolve, reject) {
+                    $.get(url, function (protein) {
+                        self.uniprotData = protein;
+                        resolve(protein);
+                    }).fail(function () {
+                        reject();
+                    });
+                });
+            }
+        }
+    }, {
+        key: 'getUniprotData',
+        value: function getUniprotData(uniprotData) {
+            return this.uniprotData;
+        }
+    }]);
+
+    return Protein;
+}();
 
 /**
  * Get Protein objects from Fasta string.
@@ -351,6 +370,8 @@ class Protein {
  * Promise get's rejected (aka. `catch` clause) if some parsing error occurs.
  *
  */
+
+
 function fromFasta(text, alphabet) {
     if (typeof text !== 'string') {
         throw "Passed invalid object to parse function.";
@@ -358,20 +379,22 @@ function fromFasta(text, alphabet) {
         throw "Passed an empty string.";
     }
 
-    let sequences = [];
+    var sequences = [];
 
     // this flag get's updated when I'm reading a sequence. No comments should appear when I'm reading a sequence (see switch).
-    let readingSequence = false;
-    let readingHeaders = false;
+    var readingSequence = false;
+    var readingHeaders = false;
 
-    return new Promise((resolve, reject) => {
+    return new Promise(function (resolve, reject) {
         text
         // Split line by line
         .split("\n")
         // Get rid of lines only containing spaces or tabs (or nothing)
-        .filter(s => s.replace(/[\s|\t]+/, '').length > 0)
+        .filter(function (s) {
+            return s.replace(/[\s|\t]+/, '').length > 0;
+        })
         // Perform switch on line output
-        .forEach(line => {
+        .forEach(function (line) {
             switch (true) {
                 // Marks beginning of sequence in common FASTA file
                 case /^>/.test(line):
@@ -422,7 +445,7 @@ function fromFasta(text, alphabet) {
             }
         });
 
-        return resolve([sequences.map(s => {
+        return resolve([sequences.map(function (s) {
             return new Protein(s.sequence);
         }), sequences]);
     });
@@ -442,21 +465,21 @@ function fromFasta(text, alphabet) {
  */
 function fromAccession(accession) {
     if (!accessionNumberRegex.test(accession)) {
-        return new Promise((resolve, reject) => {
+        return new Promise(function (resolve, reject) {
             return reject();
         });
     }
 
-    let url = 'https://www.ebi.ac.uk/proteins/api/proteins/' + accession;
+    var url = 'https://www.ebi.ac.uk/proteins/api/proteins/' + accession;
 
     {
-        return new Promise((resolve, reject) => {
-            $.get(url, protein => {
-                let p = new Protein(protein.sequence.sequence);
+        return new Promise(function (resolve, reject) {
+            $.get(url, function (protein) {
+                var p = new Protein(protein.sequence.sequence);
                 p.setUniprotData(protein);
 
                 return resolve([[p], [protein]]);
-            }).fail(() => {
+            }).fail(function () {
                 return reject();
             });
         });
@@ -482,10 +505,12 @@ function fromAccession(accession) {
  * Promise get's rejected (aka. `catch` clause) if parsing doesn't identify candidates
  */
 function fromSequence(sequence, alphabet) {
-    return new Promise((resolve, reject) => {
-        let match = sequence.match(sequenceParser(alphabet));
+    return new Promise(function (resolve, reject) {
+        var match = sequence.match(sequenceParser(alphabet));
         if (match !== undefined && match !== null) {
-            match = match.map(e => e.replace(/\n/g, ""));
+            match = match.map(function (e) {
+                return e.replace(/\n/g, "");
+            });
 
             return resolve([[new Protein(match[0])], [match[0]]]);
         } else {
@@ -533,11 +558,15 @@ function autodetect(text, alphabet) {
             break;
         case sequenceParser(alphabet).test(text):
             // Return nested function, so that alphabet is defined at this stage already (avoid inconsistency!)
-            return text => fromSequence(text, alphabet);
+            return function (text) {
+                return fromSequence(text, alphabet);
+            };
             break;
         case validFasta(text, alphabet):
             // Return nested function, so that alphabet is defined at this stage already (avoid inconsistency!)
-            return text => fromFasta(text, alphabet);
+            return function (text) {
+                return fromFasta(text, alphabet);
+            };
             break;
         default:
             return undefined;
