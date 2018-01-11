@@ -262,12 +262,24 @@ export function fromSequence(sequence, alphabet) {
  *                                          ["PSI-BLAST"](https://blast.ncbi.nlm.nih.gov/Blast.cgi?CMD=Web&PAGE_TYPE=BlastDocs&DOC_TYPE=BlastHelp).
  *                                          Default is ["IUPAC"](http://www.bioinformatics.org/sms/iupac.html).
  *
- * @return          {boolean}   True if text can be parsed either as UniProt accession, AA sequence or FASTA file
+ * @return          {Object}   True if text can be parsed either as UniProt accession, AA sequence or FASTA file
  */
 export function validInput(text, alphabet) {
-    return accessionNumberRegex.test(text)
-        || sequenceParser(alphabet).test(text)
-        || validFasta(text, alphabet);
+    switch(true){
+        case (accessionNumberRegex.test(text)):
+            return parsers.uniprot;
+            break;
+        case sequenceParser(alphabet).test(text):
+            // Return nested function, so that alphabet is defined at this stage already (avoid inconsistency!)
+            return parsers.aa;
+            break;
+        case validFasta(text, alphabet):
+            // Return nested function, so that alphabet is defined at this stage already (avoid inconsistency!)
+            return parsers.fasta;
+            break;
+        default:
+            return undefined;
+    }
 }
 
 
@@ -313,4 +325,14 @@ export const alphabets = {
     "IUPAC2": 2,
     "IUPAC": 3,
     "NATURAL": 4,
+};
+
+/**
+ * Collection of alphabets to be passed to parsing functions.
+ *
+ */
+export const parsers = {
+    fasta: 0,
+    aa: 1,
+    uniprot: 2,
 };
