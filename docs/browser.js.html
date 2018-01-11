@@ -48,6 +48,10 @@
               </li>
               <li><a href="#autodetect"><i class="alert alert-info"></i><span>autodetect</span></a>
               </li>
+              <li><a href="#alphabets"><i class="alert alert-success"></i><span>alphabets</span></a>
+              </li>
+              <li><a href="#parsers"><i class="alert alert-success"></i><span>parsers</span></a>
+              </li>
             </ul>
           </div>
         </div>
@@ -333,16 +337,28 @@
               </tr>
               <tr>
                 <td>return</td>
-                <td>boolean</td>
+                <td>Object</td>
                 <td><p>True if text can be parsed either as UniProt accession, AA sequence or FASTA file</p></td>
               </tr>
             </tbody>
           </table>
           <div class="description"><p>Get Protein object from Accession number (via UniProt).</p></div>
           <pre><code class="language-javascript">function validInput(text, alphabet) {
-    return accessionNumberRegex.test(text)
-        || sequenceParser(alphabet).test(text)
-        || validFasta(text, alphabet);
+    switch(true){
+        case (accessionNumberRegex.test(text)):
+            return parsers.uniprot;
+            break;
+        case sequenceParser(alphabet).test(text):
+            // Return nested function, so that alphabet is defined at this stage already (avoid inconsistency!)
+            return parsers.aa;
+            break;
+        case validFasta(text, alphabet):
+            // Return nested function, so that alphabet is defined at this stage already (avoid inconsistency!)
+            return parsers.fasta;
+            break;
+        default:
+            return undefined;
+    }
 }</code></pre>
           <section id="autodetect">
             <h1>autodetect</h1>
@@ -394,14 +410,44 @@
         default:
             return undefined;
     }
-}
+}</code></pre>
+          <section id="alphabets">
+            <h1>alphabets</h1>
+            <h5 class="subheader"></h5>
+            <p>
+              <div class="label label-success radius ctx-type">declaration</div><span>&nbsp;</span><span>alphabets</span><span>&nbsp;</span>
+            </p>
+          </section>
+          <div class="description"><p>Collection of alphabets to be passed to parsing functions.</p></div>
+          <pre><code class="language-javascript">const alphabets = {
+    &quot;PSI_BLAST&quot; : 0,
+    &quot;EXTENDED_IUPAC2&quot;: 1,
+    &quot;IUPAC2&quot;: 2,
+    &quot;IUPAC&quot;: 3,
+    &quot;NATURAL&quot;: 4,
+};</code></pre>
+          <section id="parsers">
+            <h1>parsers</h1>
+            <h5 class="subheader"></h5>
+            <p>
+              <div class="label label-success radius ctx-type">declaration</div><span>&nbsp;</span><span>parsers</span><span>&nbsp;</span>
+            </p>
+          </section>
+          <div class="description"><p>Collection of alphabets to be passed to parsing functions.</p></div>
+          <pre><code class="language-javascript">const parsers = {
+    fasta: 0,
+    aa: 1,
+    uniprot: 2,
+};
 
 exports.Protein = Protein;
 exports.fromFasta = fromFasta;
 exports.fromAccession = fromAccession;
 exports.fromSequence = fromSequence;
 exports.validInput = validInput;
-exports.autodetect = autodetect;</code></pre>
+exports.autodetect = autodetect;
+exports.alphabets = alphabets;
+exports.parsers = parsers;</code></pre>
         </div>
       </div>
     </div>

@@ -135,17 +135,17 @@ var md5 = _interopDefault(__webpack_require__(2));
 
 var sequenceParser = function sequenceParser(alphabet) {
     switch (alphabet) {
-        case "PSI-BLAST":
+        case alphabets.PSI_BLAST:
             return (/^(([A-Z*\-])+\n{0,1})+$/
             );
-        case "EXTENDED-IUPAC2":
+        case alphabets.EXTENDED_IUPAC2:
             return (/^(([ACDEFGHIKLMNPQRSTVWYBXZ*\-])+\n{0,1})+$/
             );
-        case "IUPAC2":
+        case alphabets.IUPAC2:
             return (/^(([ACDEFGHIKLMNPQRSTVWYBXZ])+\n{0,1})+$/
             );
-        case "IUPAC":
-        case "NATURAL":
+        case alphabets.IUPAC:
+        case alphabets.NATURAL:
         case undefined:
         default:
             return (/^([ACDEFGHIKLMNPQRSTVWY])+$/
@@ -155,17 +155,17 @@ var sequenceParser = function sequenceParser(alphabet) {
 
 var FASTABodyParser = function FASTABodyParser(alphabet) {
     switch (alphabet) {
-        case "PSI-BLAST":
+        case alphabets.PSI_BLAST:
             return (/^([A-Z\-])+$/
             );
-        case "EXTENDED-IUPAC2":
+        case alphabets.EXTENDED_IUPAC2:
             return (/^([ACDEFGHIKLMNPQRSTVWYBXZ\-])+$/
             );
-        case "IUPAC2":
+        case alphabets.IUPAC2:
             return (/^([ACDEFGHIKLMNPQRSTVWYBXZ])+$/
             );
-        case "IUPAC":
-        case "NATURAL":
+        case alphabets.IUPAC:
+        case alphabets.NATURAL:
         case undefined:
         default:
             return (/^([ACDEFGHIKLMNPQRSTVWY])+$/
@@ -175,17 +175,17 @@ var FASTABodyParser = function FASTABodyParser(alphabet) {
 
 var FASTAEndReadParser = function FASTAEndReadParser(alphabet) {
     switch (alphabet) {
-        case "PSI-BLAST":
+        case alphabets.PSI_BLAST:
             return (/^([A-Z\-])+\*$/
             );
-        case "EXTENDED-IUPAC2":
+        case alphabets.EXTENDED_IUPAC2:
             return (/^([ACDEFGHIKLMNPQRSTVWYBXZ*\-])+\*$/
             );
-        case "IUPAC2":
+        case alphabets.IUPAC2:
             return (/^([ACDEFGHIKLMNPQRSTVWYBXZ])+\*$/
             );
-        case "IUPAC":
-        case "NATURAL":
+        case alphabets.IUPAC:
+        case alphabets.NATURAL:
         case undefined:
         default:
             return (/^([ACDEFGHIKLMNPQRSTVWY])+\*$/
@@ -531,10 +531,24 @@ function fromSequence(sequence, alphabet) {
  *                                          ["PSI-BLAST"](https://blast.ncbi.nlm.nih.gov/Blast.cgi?CMD=Web&PAGE_TYPE=BlastDocs&DOC_TYPE=BlastHelp).
  *                                          Default is ["IUPAC"](http://www.bioinformatics.org/sms/iupac.html).
  *
- * @return          {boolean}   True if text can be parsed either as UniProt accession, AA sequence or FASTA file
+ * @return          {Object}   True if text can be parsed either as UniProt accession, AA sequence or FASTA file
  */
 function validInput(text, alphabet) {
-    return accessionNumberRegex.test(text) || sequenceParser(alphabet).test(text) || validFasta(text, alphabet);
+    switch (true) {
+        case accessionNumberRegex.test(text):
+            return parsers.uniprot;
+            break;
+        case sequenceParser(alphabet).test(text):
+            // Return nested function, so that alphabet is defined at this stage already (avoid inconsistency!)
+            return parsers.aa;
+            break;
+        case validFasta(text, alphabet):
+            // Return nested function, so that alphabet is defined at this stage already (avoid inconsistency!)
+            return parsers.fasta;
+            break;
+        default:
+            return undefined;
+    }
 }
 
 /**
@@ -573,12 +587,36 @@ function autodetect(text, alphabet) {
     }
 }
 
+/**
+ * Collection of alphabets to be passed to parsing functions.
+ *
+ */
+var alphabets = {
+    "PSI_BLAST": 0,
+    "EXTENDED_IUPAC2": 1,
+    "IUPAC2": 2,
+    "IUPAC": 3,
+    "NATURAL": 4
+};
+
+/**
+ * Collection of alphabets to be passed to parsing functions.
+ *
+ */
+var parsers = {
+    fasta: 0,
+    aa: 1,
+    uniprot: 2
+};
+
 exports.Protein = Protein;
 exports.fromFasta = fromFasta;
 exports.fromAccession = fromAccession;
 exports.fromSequence = fromSequence;
 exports.validInput = validInput;
 exports.autodetect = autodetect;
+exports.alphabets = alphabets;
+exports.parsers = parsers;
 
 /***/ }),
 /* 2 */

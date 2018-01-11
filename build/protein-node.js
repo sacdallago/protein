@@ -16941,17 +16941,17 @@ var md5 = _interopDefault(__webpack_require__(89));
 
 var sequenceParser = function sequenceParser(alphabet) {
     switch (alphabet) {
-        case "PSI-BLAST":
+        case alphabets.PSI_BLAST:
             return (/^(([A-Z*\-])+\n{0,1})+$/
             );
-        case "EXTENDED-IUPAC2":
+        case alphabets.EXTENDED_IUPAC2:
             return (/^(([ACDEFGHIKLMNPQRSTVWYBXZ*\-])+\n{0,1})+$/
             );
-        case "IUPAC2":
+        case alphabets.IUPAC2:
             return (/^(([ACDEFGHIKLMNPQRSTVWYBXZ])+\n{0,1})+$/
             );
-        case "IUPAC":
-        case "NATURAL":
+        case alphabets.IUPAC:
+        case alphabets.NATURAL:
         case undefined:
         default:
             return (/^([ACDEFGHIKLMNPQRSTVWY])+$/
@@ -16961,17 +16961,17 @@ var sequenceParser = function sequenceParser(alphabet) {
 
 var FASTABodyParser = function FASTABodyParser(alphabet) {
     switch (alphabet) {
-        case "PSI-BLAST":
+        case alphabets.PSI_BLAST:
             return (/^([A-Z\-])+$/
             );
-        case "EXTENDED-IUPAC2":
+        case alphabets.EXTENDED_IUPAC2:
             return (/^([ACDEFGHIKLMNPQRSTVWYBXZ\-])+$/
             );
-        case "IUPAC2":
+        case alphabets.IUPAC2:
             return (/^([ACDEFGHIKLMNPQRSTVWYBXZ])+$/
             );
-        case "IUPAC":
-        case "NATURAL":
+        case alphabets.IUPAC:
+        case alphabets.NATURAL:
         case undefined:
         default:
             return (/^([ACDEFGHIKLMNPQRSTVWY])+$/
@@ -16981,17 +16981,17 @@ var FASTABodyParser = function FASTABodyParser(alphabet) {
 
 var FASTAEndReadParser = function FASTAEndReadParser(alphabet) {
     switch (alphabet) {
-        case "PSI-BLAST":
+        case alphabets.PSI_BLAST:
             return (/^([A-Z\-])+\*$/
             );
-        case "EXTENDED-IUPAC2":
+        case alphabets.EXTENDED_IUPAC2:
             return (/^([ACDEFGHIKLMNPQRSTVWYBXZ*\-])+\*$/
             );
-        case "IUPAC2":
+        case alphabets.IUPAC2:
             return (/^([ACDEFGHIKLMNPQRSTVWYBXZ])+\*$/
             );
-        case "IUPAC":
-        case "NATURAL":
+        case alphabets.IUPAC:
+        case alphabets.NATURAL:
         case undefined:
         default:
             return (/^([ACDEFGHIKLMNPQRSTVWY])+\*$/
@@ -17345,10 +17345,24 @@ function fromSequence(sequence, alphabet) {
  *                                          ["PSI-BLAST"](https://blast.ncbi.nlm.nih.gov/Blast.cgi?CMD=Web&PAGE_TYPE=BlastDocs&DOC_TYPE=BlastHelp).
  *                                          Default is ["IUPAC"](http://www.bioinformatics.org/sms/iupac.html).
  *
- * @return          {boolean}   True if text can be parsed either as UniProt accession, AA sequence or FASTA file
+ * @return          {Object}   True if text can be parsed either as UniProt accession, AA sequence or FASTA file
  */
 function validInput(text, alphabet) {
-    return accessionNumberRegex.test(text) || sequenceParser(alphabet).test(text) || validFasta(text, alphabet);
+    switch (true) {
+        case accessionNumberRegex.test(text):
+            return parsers.uniprot;
+            break;
+        case sequenceParser(alphabet).test(text):
+            // Return nested function, so that alphabet is defined at this stage already (avoid inconsistency!)
+            return parsers.aa;
+            break;
+        case validFasta(text, alphabet):
+            // Return nested function, so that alphabet is defined at this stage already (avoid inconsistency!)
+            return parsers.fasta;
+            break;
+        default:
+            return undefined;
+    }
 }
 
 /**
@@ -17387,12 +17401,36 @@ function autodetect(text, alphabet) {
     }
 }
 
+/**
+ * Collection of alphabets to be passed to parsing functions.
+ *
+ */
+var alphabets = {
+    "PSI_BLAST": 0,
+    "EXTENDED_IUPAC2": 1,
+    "IUPAC2": 2,
+    "IUPAC": 3,
+    "NATURAL": 4
+};
+
+/**
+ * Collection of alphabets to be passed to parsing functions.
+ *
+ */
+var parsers = {
+    fasta: 0,
+    aa: 1,
+    uniprot: 2
+};
+
 exports.Protein = Protein;
 exports.fromFasta = fromFasta;
 exports.fromAccession = fromAccession;
 exports.fromSequence = fromSequence;
 exports.validInput = validInput;
 exports.autodetect = autodetect;
+exports.alphabets = alphabets;
+exports.parsers = parsers;
 
 /***/ }),
 /* 89 */
@@ -19380,7 +19418,7 @@ MemoryCookieStore.prototype.getAllCookies = function(cb) {
 /* 95 */
 /***/ (function(module, exports) {
 
-module.exports = {"_args":[["tough-cookie@2.3.3","/Users/chdallago/git/protein"]],"_from":"tough-cookie@2.3.3","_id":"tough-cookie@2.3.3","_inBundle":false,"_integrity":"sha1-C2GKVWW23qkL80JdBNVe3EdadWE=","_location":"/tough-cookie","_phantomChildren":{},"_requested":{"type":"version","registry":true,"raw":"tough-cookie@2.3.3","name":"tough-cookie","escapedName":"tough-cookie","rawSpec":"2.3.3","saveSpec":null,"fetchSpec":"2.3.3"},"_requiredBy":["/request"],"_resolved":"https://registry.npmjs.org/tough-cookie/-/tough-cookie-2.3.3.tgz","_spec":"2.3.3","_where":"/Users/chdallago/git/protein","author":{"name":"Jeremy Stashewsky","email":"jstashewsky@salesforce.com"},"bugs":{"url":"https://github.com/salesforce/tough-cookie/issues"},"contributors":[{"name":"Alexander Savin"},{"name":"Ian Livingstone"},{"name":"Ivan Nikulin"},{"name":"Lalit Kapoor"},{"name":"Sam Thompson"},{"name":"Sebastian Mayr"}],"dependencies":{"punycode":"^1.4.1"},"description":"RFC6265 Cookies and Cookie Jar for node.js","devDependencies":{"async":"^1.4.2","string.prototype.repeat":"^0.2.0","vows":"^0.8.1"},"engines":{"node":">=0.8"},"files":["lib"],"homepage":"https://github.com/salesforce/tough-cookie","keywords":["HTTP","cookie","cookies","set-cookie","cookiejar","jar","RFC6265","RFC2965"],"license":"BSD-3-Clause","main":"./lib/cookie","name":"tough-cookie","repository":{"type":"git","url":"git://github.com/salesforce/tough-cookie.git"},"scripts":{"suffixup":"curl -o public_suffix_list.dat https://publicsuffix.org/list/public_suffix_list.dat && ./generate-pubsuffix.js","test":"vows test/*_test.js"},"version":"2.3.3"}
+module.exports = {"_from":"tough-cookie@~2.3.3","_id":"tough-cookie@2.3.3","_inBundle":false,"_integrity":"sha1-C2GKVWW23qkL80JdBNVe3EdadWE=","_location":"/tough-cookie","_phantomChildren":{},"_requested":{"type":"range","registry":true,"raw":"tough-cookie@~2.3.3","name":"tough-cookie","escapedName":"tough-cookie","rawSpec":"~2.3.3","saveSpec":null,"fetchSpec":"~2.3.3"},"_requiredBy":["/request"],"_resolved":"https://registry.npmjs.org/tough-cookie/-/tough-cookie-2.3.3.tgz","_shasum":"0b618a5565b6dea90bf3425d04d55edc475a7561","_spec":"tough-cookie@~2.3.3","_where":"/Users/chdallago/git/protein/node_modules/request","author":{"name":"Jeremy Stashewsky","email":"jstashewsky@salesforce.com"},"bugs":{"url":"https://github.com/salesforce/tough-cookie/issues"},"bundleDependencies":false,"contributors":[{"name":"Alexander Savin"},{"name":"Ian Livingstone"},{"name":"Ivan Nikulin"},{"name":"Lalit Kapoor"},{"name":"Sam Thompson"},{"name":"Sebastian Mayr"}],"dependencies":{"punycode":"^1.4.1"},"deprecated":false,"description":"RFC6265 Cookies and Cookie Jar for node.js","devDependencies":{"async":"^1.4.2","string.prototype.repeat":"^0.2.0","vows":"^0.8.1"},"engines":{"node":">=0.8"},"files":["lib"],"homepage":"https://github.com/salesforce/tough-cookie","keywords":["HTTP","cookie","cookies","set-cookie","cookiejar","jar","RFC6265","RFC2965"],"license":"BSD-3-Clause","main":"./lib/cookie","name":"tough-cookie","repository":{"type":"git","url":"git://github.com/salesforce/tough-cookie.git"},"scripts":{"suffixup":"curl -o public_suffix_list.dat https://publicsuffix.org/list/public_suffix_list.dat && ./generate-pubsuffix.js","test":"vows test/*_test.js"},"version":"2.3.3"}
 
 /***/ }),
 /* 96 */
@@ -22222,7 +22260,7 @@ exports.badImplementation = function (message, data) {
 /* 106 */
 /***/ (function(module, exports) {
 
-module.exports = {"_args":[["hawk@6.0.2","/Users/chdallago/git/protein"]],"_from":"hawk@6.0.2","_id":"hawk@6.0.2","_inBundle":false,"_integrity":"sha512-miowhl2+U7Qle4vdLqDdPt9m09K6yZhkLDTWGoUiUzrQCn+mHHSmfJgAyGaLRZbPmTqfFFjRV1QWCW0VWUJBbQ==","_location":"/hawk","_phantomChildren":{},"_requested":{"type":"version","registry":true,"raw":"hawk@6.0.2","name":"hawk","escapedName":"hawk","rawSpec":"6.0.2","saveSpec":null,"fetchSpec":"6.0.2"},"_requiredBy":["/request"],"_resolved":"https://registry.npmjs.org/hawk/-/hawk-6.0.2.tgz","_spec":"6.0.2","_where":"/Users/chdallago/git/protein","author":{"name":"Eran Hammer","email":"eran@hammer.io","url":"http://hueniverse.com"},"babel":{"presets":["es2015"]},"browser":"dist/browser.js","bugs":{"url":"https://github.com/hueniverse/hawk/issues"},"dependencies":{"boom":"4.x.x","cryptiles":"3.x.x","hoek":"4.x.x","sntp":"2.x.x"},"description":"HTTP Hawk Authentication Scheme","devDependencies":{"babel-cli":"^6.1.2","babel-preset-es2015":"^6.1.2","code":"4.x.x","lab":"14.x.x"},"engines":{"node":">=4.5.0"},"homepage":"https://github.com/hueniverse/hawk#readme","keywords":["http","authentication","scheme","hawk"],"license":"BSD-3-Clause","main":"lib/index.js","name":"hawk","repository":{"type":"git","url":"git://github.com/hueniverse/hawk.git"},"scripts":{"build-client":"mkdir -p dist; babel lib/browser.js --out-file dist/browser.js","prepublish":"npm run-script build-client","test":"lab -a code -t 100 -L","test-cov-html":"lab -a code -r html -o coverage.html"},"version":"6.0.2"}
+module.exports = {"_from":"hawk@~6.0.2","_id":"hawk@6.0.2","_inBundle":false,"_integrity":"sha512-miowhl2+U7Qle4vdLqDdPt9m09K6yZhkLDTWGoUiUzrQCn+mHHSmfJgAyGaLRZbPmTqfFFjRV1QWCW0VWUJBbQ==","_location":"/hawk","_phantomChildren":{},"_requested":{"type":"range","registry":true,"raw":"hawk@~6.0.2","name":"hawk","escapedName":"hawk","rawSpec":"~6.0.2","saveSpec":null,"fetchSpec":"~6.0.2"},"_requiredBy":["/request"],"_resolved":"https://registry.npmjs.org/hawk/-/hawk-6.0.2.tgz","_shasum":"af4d914eb065f9b5ce4d9d11c1cb2126eecc3038","_spec":"hawk@~6.0.2","_where":"/Users/chdallago/git/protein/node_modules/request","author":{"name":"Eran Hammer","email":"eran@hammer.io","url":"http://hueniverse.com"},"babel":{"presets":["es2015"]},"browser":"dist/browser.js","bugs":{"url":"https://github.com/hueniverse/hawk/issues"},"bundleDependencies":false,"dependencies":{"boom":"4.x.x","cryptiles":"3.x.x","hoek":"4.x.x","sntp":"2.x.x"},"deprecated":false,"description":"HTTP Hawk Authentication Scheme","devDependencies":{"babel-cli":"^6.1.2","babel-preset-es2015":"^6.1.2","code":"4.x.x","lab":"14.x.x"},"engines":{"node":">=4.5.0"},"homepage":"https://github.com/hueniverse/hawk#readme","keywords":["http","authentication","scheme","hawk"],"license":"BSD-3-Clause","main":"lib/index.js","name":"hawk","repository":{"type":"git","url":"git://github.com/hueniverse/hawk.git"},"scripts":{"build-client":"mkdir -p dist; babel lib/browser.js --out-file dist/browser.js","prepublish":"npm run-script build-client","test":"lab -a code -t 100 -L","test-cov-html":"lab -a code -r html -o coverage.html"},"version":"6.0.2"}
 
 /***/ }),
 /* 107 */
