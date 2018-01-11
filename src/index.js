@@ -328,7 +328,7 @@ export const alphabets = {
 };
 
 /**
- * Collection of alphabets to be passed to parsing functions.
+ * Collection of available parsers.
  *
  */
 export const parsers = {
