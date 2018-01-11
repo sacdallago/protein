@@ -17414,7 +17414,7 @@ var alphabets = {
 };
 
 /**
- * Collection of alphabets to be passed to parsing functions.
+ * Collection of available parsers.
  *
  */
 var parsers = {
