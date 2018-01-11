@@ -302,3 +302,15 @@ export function autodetect(text, alphabet) {
             return undefined;
     }
 }
+
+/**
+ * Collection of alphabets to be passed to parsing functions.
+ *
+ */
+export const alphabets = {
+    "PSI_BLAST" : 0,
+    "EXTENDED_IUPAC2": 1,
+    "IUPAC2": 2,
+    "IUPAC": 3,
+    "NATURAL": 4,
+};

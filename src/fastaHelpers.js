@@ -1,13 +1,15 @@
+import { alphabets } from './index';
+
 export const sequenceParser = (alphabet) => {
     switch(alphabet){
-        case "PSI-BLAST":
+        case alphabets.PSI_BLAST:
             return /^(([A-Z*\-])+\n{0,1})+$/;
-        case "EXTENDED-IUPAC2":
+        case alphabets.EXTENDED_IUPAC2:
             return /^(([ACDEFGHIKLMNPQRSTVWYBXZ*\-])+\n{0,1})+$/;
-        case "IUPAC2":
+        case alphabets.IUPAC2:
             return /^(([ACDEFGHIKLMNPQRSTVWYBXZ])+\n{0,1})+$/;
-        case "IUPAC":
-        case "NATURAL":
+        case alphabets.IUPAC:
+        case alphabets.NATURAL:
         case undefined:
         default:
             return /^([ACDEFGHIKLMNPQRSTVWY])+$/;
@@ -16,14 +18,14 @@ export const sequenceParser = (alphabet) => {
 
 export const FASTABodyParser = (alphabet) => {
     switch(alphabet){
-        case "PSI-BLAST":
+        case alphabets.PSI_BLAST:
             return /^([A-Z\-])+$/;
-        case "EXTENDED-IUPAC2":
+        case alphabets.EXTENDED_IUPAC2:
             return /^([ACDEFGHIKLMNPQRSTVWYBXZ\-])+$/;
-        case "IUPAC2":
+        case alphabets.IUPAC2:
             return /^([ACDEFGHIKLMNPQRSTVWYBXZ])+$/;
-        case "IUPAC":
-        case "NATURAL":
+        case alphabets.IUPAC:
+        case alphabets.NATURAL:
         case undefined:
         default:
             return /^([ACDEFGHIKLMNPQRSTVWY])+$/;
@@ -32,14 +34,14 @@ export const FASTABodyParser = (alphabet) => {
 
 export const FASTAEndReadParser = (alphabet) => {
     switch(alphabet){
-        case "PSI-BLAST":
+        case alphabets.PSI_BLAST:
             return /^([A-Z\-])+\*$/;
-        case "EXTENDED-IUPAC2":
+        case alphabets.EXTENDED_IUPAC2:
             return /^([ACDEFGHIKLMNPQRSTVWYBXZ*\-])+\*$/;
-        case "IUPAC2":
+        case alphabets.IUPAC2:
             return /^([ACDEFGHIKLMNPQRSTVWYBXZ])+\*$/;
-        case "IUPAC":
-        case "NATURAL":
+        case alphabets.IUPAC:
+        case alphabets.NATURAL:
         case undefined:
         default:
             return /^([ACDEFGHIKLMNPQRSTVWY])+\*$/;
