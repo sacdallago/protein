@@ -1,5 +1,6 @@
 import md5 from 'md5';
 import { extractFASTAHeaderInfo, FASTABodyParser, validFasta, FASTAEndReadParser, sequenceParser } from './fastaHelpers';
+import { uniprotNameRegex } from './uniprotHelpers'
 
 let $;
 let request;
@@ -232,18 +233,25 @@ export function fromAccession(accession) {
  */
 export function fromUniprotQuery(query) {
 
-    let url = 'https://www.uniprot.org/uniprot/?format=fasta&query=' + query;
+    let url = 'https://www.accession.org/accession/?format=fasta&query=' + query;
 
     if (process.browser) {
         return new Promise((resolve, reject) => {
             $.get(url, (fastaProteins) => {
-                return fromFasta(fastaProteins, alphabets.IUPAC2)
-                    .then(result => {
-                        resolve(result);
-                    })
-                    .catch(error => {
-                        reject(error);
-                    });
+
+                if(fastaProteins.length > 0){
+                    return fromFasta(fastaProteins, alphabets.IUPAC2)
+                        .then(result => {
+                            resolve(result);
+                        })
+                        .catch(error => {
+                            reject(error);
+                        });
+                } else {
+                    return reject("No sequences found");
+                }
+
+
             }).fail(() => {
                 return reject();
             });
@@ -255,13 +263,17 @@ export function fromUniprotQuery(query) {
                     if(error){
                         return reject(error);
                     } else {
-                        return fromFasta(fastaProteins, alphabets.IUPAC2)
-                            .then(result => {
-                                resolve(result);
-                            })
-                            .catch(error => {
-                                reject(error);
-                            });
+                        if(fastaProteins.length > 0){
+                            return fromFasta(fastaProteins, alphabets.IUPAC2)
+                                .then(result => {
+                                    resolve(result);
+                                })
+                                .catch(error => {
+                                    reject(error);
+                                });
+                        } else {
+                            return reject("No sequences found");
+                        }
                     }
                 })
         });
@@ -317,16 +329,13 @@ export function fromSequence(sequence, alphabet) {
 export function validInput(text, alphabet) {
     switch(true){
         case (accessionNumberRegex.test(text)):
-            return parsers.uniprot;
-            break;
+            return parsers.accession;
         case sequenceParser(alphabet).test(text):
-            // Return nested function, so that alphabet is defined at this stage already (avoid inconsistency!)
             return parsers.aa;
-            break;
         case validFasta(text, alphabet):
-            // Return nested function, so that alphabet is defined at this stage already (avoid inconsistency!)
             return parsers.fasta;
-            break;
+        case (uniprotNameRegex.test(text)):
+            return parsers.uniprot;
         default:
             return undefined;
     }
@@ -351,15 +360,14 @@ export function autodetect(text, alphabet) {
     switch(true){
         case (accessionNumberRegex.test(text)):
             return fromAccession;
-            break;
         case sequenceParser(alphabet).test(text):
             // Return nested function, so that alphabet is defined at this stage already (avoid inconsistency!)
             return (text) => fromSequence(text, alphabet);
-            break;
         case validFasta(text, alphabet):
             // Return nested function, so that alphabet is defined at this stage already (avoid inconsistency!)
             return (text) => fromFasta(text, alphabet);
-            break;
+        case (uniprotNameRegex.test(text)):
+            return fromUniprotQuery;
         default:
             return undefined;
     }
@@ -384,5 +392,6 @@ export const alphabets = {
 export const parsers = {
     fasta: 0,
     aa: 1,
-    uniprot: 2,
+    accession: 2,
+    uniprot: 3
 };

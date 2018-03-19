@@ -134,6 +134,18 @@ KLAHRLREFG`;
             console.error("-----------API-UNIPROT-QUERY-(gene)-----------");
         });
 
+    Protein.fromUniprotQuery("erkjbver")
+        .then(([protein, raw]) => {
+            createElement("-----------API-UNIPROT-QUERY-(nonesense)-----------");
+            createElement(JSON.stringify(protein));
+            createElement("-----------API-UNIPROT-QUERY-(nonesense)-----------");
+        })
+        .catch((error) => {
+            console.error("-----------API-UNIPROT-QUERY-(nonesense)-----------");
+            console.error(error);
+            console.error("-----------API-UNIPROT-QUERY-(nonesense)-----------");
+        });
+
 </script>
 </body>
 </html>

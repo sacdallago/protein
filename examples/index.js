@@ -149,3 +149,15 @@ Protein.fromUniprotQuery("GOT2")
         console.error(error);
         console.error("-----------API-UNIPROT-QUERY-(gene)-----------");
     });
+
+Protein.fromUniprotQuery("erkjbver")
+    .then(([protein, raw]) => {
+        console.log("-----------API-UNIPROT-QUERY-(nonesense)-----------");
+        console.log(JSON.stringify(protein));
+        console.log("-----------API-UNIPROT-QUERY-(nonesense)-----------");
+    })
+    .catch((error) => {
+        console.error("-----------API-UNIPROT-QUERY-(nonesense)-----------");
+        console.error(error);
+        console.error("-----------API-UNIPROT-QUERY-(nonesense)-----------");
+    });
