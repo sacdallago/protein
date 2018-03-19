@@ -70,7 +70,7 @@ export class Protein {
  *
  *
  * @param           {String}    text        A string representing the FASTA input
- * @param           {String}    alphabet    A string representing the alphabet to use for validation.
+ * @param           {Number}    alphabet    A string representing the alphabet to use for validation.
  *                                          Valid alphabets include ["IUPAC"](http://www.bioinformatics.org/sms/iupac.html),
  *                                          ["IUPAC2"](http://www.bioinformatics.org/sms2/iupac.html),
  *                                          ["EXTENDED-IUPAC2"](http://www.bioinformatics.org/sms2/iupac.html),
@@ -219,11 +219,61 @@ export function fromAccession(accession) {
 }
 
 /**
+ * Get Protein objects (via UniProt).
+ *
+ *
+ * @param           {String}    query   A string representing a protein name, a gene name, or anything UniProt-queriable
+ *
+ * @return      {Promise}   A promise that in it's `then` clause accepts an array parameter
+ * which can be decomposed (`then([p,r])`:
+ * (p) being an array of Protein objects
+ * (r) being an array containing the raw FASTA sequences parsed
+ * Promise get's rejected (aka. `catch` clause) if some parsing error occurs.
+ */
+export function fromUniprotQuery(query) {
+
+    let url = 'https://www.uniprot.org/uniprot/?format=fasta&query=' + query;
+
+    if (process.browser) {
+        return new Promise((resolve, reject) => {
+            $.get(url, (fastaProteins) => {
+                return fromFasta(fastaProteins, alphabets.IUPAC2)
+                    .then(result => {
+                        resolve(result);
+                    })
+                    .catch(error => {
+                        reject(error);
+                    });
+            }).fail(() => {
+                return reject();
+            });
+        });
+    } else {
+        return new Promise((resolve, reject) => {
+            request
+                .get(url, (error, response, fastaProteins) => {
+                    if(error){
+                        return reject(error);
+                    } else {
+                        return fromFasta(fastaProteins, alphabets.IUPAC2)
+                            .then(result => {
+                                resolve(result);
+                            })
+                            .catch(error => {
+                                reject(error);
+                            });
+                    }
+                })
+        });
+    }
+}
+
+/**
  * Get Protein object from A-Z sequence
  *
  *
  * @param           {String}    sequence   A string representing a protein sequence (A-Z)
- * @param           {String}    alphabet   A string representing the alphabet to use for validation.
+ * @param           {Number}    alphabet   A string representing the alphabet to use for validation.
  *                                          Valid alphabets include ["IUPAC"](http://www.bioinformatics.org/sms/iupac.html),
  *                                          ["IUPAC2"](http://www.bioinformatics.org/sms2/iupac.html),
  *                                          ["EXTENDED-IUPAC2"](http://www.bioinformatics.org/sms2/iupac.html),
@@ -255,7 +305,7 @@ export function fromSequence(sequence, alphabet) {
  *
  *
  * @param           {String}    text   A string representing a FASTA sequence, an UniProt accession or a sequence in A-Z format
- * @param           {String}    alphabet   A string representing the alphabet to use for validation.
+ * @param           {Number}    alphabet   A string representing the alphabet to use for validation.
  *                                          Valid alphabets include ["IUPAC"](http://www.bioinformatics.org/sms/iupac.html),
  *                                          ["IUPAC2"](http://www.bioinformatics.org/sms2/iupac.html),
  *                                          ["EXTENDED-IUPAC2"](http://www.bioinformatics.org/sms2/iupac.html),
@@ -288,7 +338,7 @@ export function validInput(text, alphabet) {
  *
  *
  * @param           {String}    text   A string representing a FASTA sequence, an UniProt accession or a sequence in A-Z format
- * @param           {String}    alphabet   A string representing the alphabet to use for validation.
+ * @param           {Number}    alphabet   A string representing the alphabet to use for validation.
  *                                          Valid alphabets include ["IUPAC"](http://www.bioinformatics.org/sms/iupac.html),
  *                                          ["IUPAC2"](http://www.bioinformatics.org/sms2/iupac.html),
  *                                          ["EXTENDED-IUPAC2"](http://www.bioinformatics.org/sms2/iupac.html),

@@ -35,23 +35,19 @@ DAKGMATIDSNLEWVRLAQRVPVRIRLDEQQGNLWPAGTTATVVITGKQDRDASQDSFFR
 KLAHRLREFG
     `;
 
-let AASequences = `MKTLTRKLSRTAITLVLVILAFIAIFRAWVYYTESPWTRDARFSADVVAIAPDVAGLITH
-VNVHDNQLVKKDQVLFTIDQPRYQKALAEAEADVAYYQVLAQEKRQEAGRRNRLGVQAMS
-REEIDQANNVLQTVLHQLAKAQATRDLAKLDLERTVIRAPADGWVTNLNVYAGEFITRGS
-TAVALVKKNSFYVQAYMEETKLEGVRPGYRAEITPLGSNRVLKGTVDSVAAGVTNASSTS
-DAKGMATIDSNLEWVRLAQRVPVRIRLDEQQGNLWPAGTTATVVITGKQDRDASQDSFFR
-KLAHRLREFG
-`;
+let AASequence = `MKTLTRKLSRTAITLVLVILAFIAIFRAWVYYTESPWTRDARFSADVVAIAPDVAGLITHVNVHDNQLVKKDQVLFTIDQPRYQKALAEAEADVAYYQVLAQEKRQEAGRRNRLGVQAMSREEIDQANNVLQTVLHQLAKAQATRDLAKLDLERTVIRAPADGWVTNLNVYAGEFITRGSTAVALVKKNSFYVQAYMEETKLEGVRPGYRAEITPLGSNRVLKGTVDSVAAGVTNASSTSDAKGMATIDSNLEWVRLAQRVPVRIRLDEQQGNLWPAGTTATVVITGKQDRDASQDSFFRKLAHRLREFG`;
 
 
-Protein.fromSequence(AASequences)
+Protein.fromSequence(AASequence)
     .then(([proteins, raw]) => {
-        console.log("-----------SEQUENCES-----------");
+        console.log("-----------AA-SEQUENCE-----------");
         console.log(proteins);
-        console.log("-----------SEQUENCES-----------");
+        console.log("-----------AA-SEQUENCE-----------");
     })
-    .catch(() => {
-        console.error("Could not parse sequences");
+    .catch((error) => {
+        console.error("-----------AA-SEQUENCE-----------");
+        console.error(error);
+        console.error("-----------AA-SEQUENCE-----------");
     });
 
 
@@ -77,7 +73,9 @@ Protein.fromFasta(fasta, "PSI-BLAST")
         });
     })
     .catch((e) => {
+        console.error("-----------FROM-FASTA-----------");
         console.error(e);
+        console.error("-----------FROM-FASTA-----------");
     });
 
 Protein.fromAccession("P12345")
@@ -86,20 +84,13 @@ Protein.fromAccession("P12345")
         console.log(protein);
         console.log("-----------API-ACCESSION-----------");
     })
-    .catch(() => {
-        console.error("could not GET protein by accession");
+    .catch((error) => {
+        console.error("-----------API-ACCESSION-----------");
+        console.error(error);
+        console.error("-----------API-ACCESSION-----------");
+
     });
 
-
-Protein.fromAccession("P12345")
-    .then(([protein, raw]) => {
-        console.log("-----------API-ACCESSION-----------");
-        console.log(protein);
-        console.log("-----------API-ACCESSION-----------");
-    })
-    .catch(() => {
-        console.error("could not GET protein by accession");
-    });
 
 let testText = "ABBABABABABABABAJIJI-GAP*SOMETHING";
 
@@ -112,6 +103,11 @@ if(parsingFunction !== undefined){
             console.log(proteins);
             console.log("-----------AUTODETECT-----------");
         })
+        .catch((error) => {
+            console.error("-----------AUTODETECT-----------");
+            console.error(error);
+            console.error("-----------AUTODETECT-----------");
+        })
 }
 
 parsingFunction = Protein.autodetect(fasta, "PSI-BLAST");
@@ -123,4 +119,33 @@ if(parsingFunction !== undefined){
             console.log(proteins);
             console.log("-----------AUTODETECT-FASTA-----------");
         })
+        .catch((error) => {
+            console.error("-----------AUTODETECT-FASTA-----------");
+            console.error(error);
+            console.error("-----------AUTODETECT-FASTA-----------");
+        })
 }
+
+Protein.fromUniprotQuery("AATM_RABIT")
+    .then(([proteins, raw]) => {
+        console.log("-----------API-UNIPROT-QUERY-(Protein name)-----------");
+        console.log(JSON.stringify(proteins));
+        console.log("-----------API-UNIPROT-QUERY-(Protein name)-----------");
+    })
+    .catch((error) => {
+        console.error("-----------API-UNIPROT-QUERY-(Protein name)-----------");
+        console.error(error);
+        console.error("-----------API-UNIPROT-QUERY-(Protein name)-----------");
+    });
+
+Protein.fromUniprotQuery("GOT2")
+    .then(([proteins, raw]) => {
+        console.log("-----------API-UNIPROT-QUERY-(gene)-----------");
+        console.log(JSON.stringify(proteins));
+        console.log("-----------API-UNIPROT-QUERY-(gene)-----------");
+    })
+    .catch((error) => {
+        console.error("-----------API-UNIPROT-QUERY-(gene)-----------");
+        console.error(error);
+        console.error("-----------API-UNIPROT-QUERY-(gene)-----------");
+    });

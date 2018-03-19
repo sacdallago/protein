@@ -108,6 +108,32 @@ KLAHRLREFG`;
         .catch(() => {
             console.error("could not GET protein by accession");
         });
+
+
+    Protein.fromUniprotQuery("AATM_RABIT")
+        .then(([protein, raw]) => {
+            createElement("-----------API-UNIPROT-QUERY-(Protein name)-----------");
+            createElement(JSON.stringify(protein));
+            createElement("-----------API-UNIPROT-QUERY-(Protein name)-----------");
+        })
+        .catch((error) => {
+            console.error("-----------API-UNIPROT-QUERY-(Protein name)-----------");
+            console.error(error);
+            console.error("-----------API-UNIPROT-QUERY-(Protein name)-----------");
+        });
+
+    Protein.fromUniprotQuery("GOT2")
+        .then(([protein, raw]) => {
+            createElement("-----------API-UNIPROT-QUERY-(gene)-----------");
+            createElement(JSON.stringify(protein));
+            createElement("-----------API-UNIPROT-QUERY-(gene)-----------");
+        })
+        .catch((error) => {
+            console.error("-----------API-UNIPROT-QUERY-(gene)-----------");
+            console.error(error);
+            console.error("-----------API-UNIPROT-QUERY-(gene)-----------");
+        });
+
 </script>
 </body>
 </html>
