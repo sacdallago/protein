@@ -1,5 +1,5 @@
 {
-  "name": "protein.js",
+  "name": "protein-parser",
   "description": "A collecection of utilities to parse and represent proteins in js",
   "version": "0.1.0",
   "homepage": "https://github.com/sacdallago/protein",
