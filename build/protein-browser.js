@@ -10846,7 +10846,7 @@ function validInput(text, alphabet) {
         case validFasta(text, alphabet):
             return parsers.fasta;
         case uniprotNameRegex.test(text):
-            return parsers.uniprot;
+            return parsers.protein_name;
         default:
             return undefined;
     }
@@ -10907,7 +10907,8 @@ var parsers = {
     fasta: 0,
     aa: 1,
     accession: 2,
-    uniprot: 3
+    protein_name: 3,
+    uniprot: 4
 };
 
 exports.Protein = Protein;
