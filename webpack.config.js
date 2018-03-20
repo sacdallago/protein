@@ -10,8 +10,12 @@ module.exports = {
         umdNamedDefine: true,
         library: 'Protein'
     },
+    mode: "production",
+    plugins: [
+        new webpack.LoaderOptionsPlugin({ options: {} }),
+    ],
     module: {
-        loaders: [
+        rules: [
             {
                 test: /(\.jsx|\.js)$/,
                 loader: 'babel-loader',

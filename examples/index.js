@@ -50,7 +50,6 @@ Protein.fromSequence(AASequence)
         console.error("-----------AA-SEQUENCE-----------");
     });
 
-
 Protein.fromFasta(fasta, Protein.alphabets.PSI_BLAST)
     .then(([proteins, _]) => {
         console.log("-----------FROM-FASTA-----------");
@@ -95,7 +94,7 @@ if(parsingFunction !== undefined){
         })
 }
 
-parsingFunction = Protein.autodetect(fasta, "PSI-BLAST");
+parsingFunction = Protein.autodetect(fasta, Protein.alphabets.PSI_BLAST);
 
 if(parsingFunction !== undefined){
     parsingFunction(fasta)

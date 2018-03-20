@@ -5,6 +5,7 @@ export default {
     output: {
         format: 'cjs'
     },
+    external: [ 'md5' ],
     plugins: [
         replace({
             'process.browser': process.env.BROWSER === "true"
