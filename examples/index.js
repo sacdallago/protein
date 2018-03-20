@@ -51,26 +51,11 @@ Protein.fromSequence(AASequence)
     });
 
 
-Protein.fromFasta(fasta, "PSI-BLAST")
-    .then(([proteins, parsedFasta]) => {
+Protein.fromFasta(fasta, Protein.alphabets.PSI_BLAST)
+    .then(([proteins, _]) => {
         console.log("-----------FROM-FASTA-----------");
         console.log(proteins);
         console.log("-----------FROM-FASTA-----------");
-
-        parsedFasta.forEach((e,i) => {
-            let hit = e.headerInfo.find(p => p.database === "sp");
-
-            if(hit){
-                let c = proteins[i];
-
-                c.retrieveUniprotData(hit.identifier)
-                    .then(() => {
-                        console.log("-----------API-ACCESSION-FROM-FASTA-----------");
-                        console.log(c);
-                        console.log("-----------API-ACCESSION-FROM-FASTA-----------");
-                    });
-            }
-        });
     })
     .catch((e) => {
         console.error("-----------FROM-FASTA-----------");
