@@ -42,6 +42,8 @@
               </li>
               <li><a href="#fromAccession"><i class="alert alert-info"></i><span>fromAccession</span></a>
               </li>
+              <li><a href="#fromUniprotQuery"><i class="alert alert-info"></i><span>fromUniprotQuery</span></a>
+              </li>
               <li><a href="#fromSequence"><i class="alert alert-info"></i><span>fromSequence</span></a>
               </li>
               <li><a href="#validInput"><i class="alert alert-info"></i><span>validInput</span></a>
@@ -123,7 +125,7 @@
               </tr>
               <tr>
                 <td>alphabet</td>
-                <td>String</td>
+                <td>Number</td>
                 <td><p>A string representing the alphabet to use for validation.                                          Valid alphabets include <a href="http://www.bioinformatics.org/sms/iupac.html">&quot;IUPAC&quot;</a>,<br />                                         <a href="http://www.bioinformatics.org/sms2/iupac.html">&quot;IUPAC2&quot;</a>,<br />                                         <a href="http://www.bioinformatics.org/sms2/iupac.html">&quot;EXTENDED-IUPAC2&quot;</a>,<br />                                         <a href="https://blast.ncbi.nlm.nih.gov/Blast.cgi?CMD=Web&amp;PAGE_TYPE=BlastDocs&amp;DOC_TYPE=BlastHelp">&quot;PSI-BLAST&quot;</a>.<br />                                         Default is <a href="http://www.bioinformatics.org/sms/iupac.html">&quot;IUPAC&quot;</a>.</p></td>
               </tr>
               <tr>
@@ -272,6 +274,62 @@
         });
     }
 }</code></pre>
+          <section id="fromUniprotQuery">
+            <h1>fromUniprotQuery</h1>
+            <h5 class="subheader"></h5>
+            <p>
+              <div class="label label-info radius ctx-type">function</div><span>&nbsp;</span><span>fromUniprotQuery()</span><span>&nbsp;</span>
+            </p>
+          </section>
+          <table class="table table-bordered table-striped">
+            <thead>
+              <tr>
+                <th style="width:20%">Option name</th>
+                <th style="width:20%">Type</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>query</td>
+                <td>String</td>
+                <td><p>A string representing a protein name, a gene name, or anything UniProt-queriable</p></td>
+              </tr>
+              <tr>
+                <td>return</td>
+                <td>Promise</td>
+                <td><p>A promise that in it&#39;s <code>then</code> clause accepts an array parameter which can be decomposed (<code>then([p,r])</code>:<br />(p) being an array of Protein objects<br />(r) being an array containing the raw FASTA sequences parsed<br />Promise get&#39;s rejected (aka. <code>catch</code> clause) if some parsing error occurs.</p></td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="description"><p>Get Protein objects (via UniProt).</p></div>
+          <pre><code class="language-javascript">function fromUniprotQuery(query) {
+
+    let url = 'https://www.accession.org/accession/?format=fasta&amp;query=' + query;
+
+    {
+        return new Promise((resolve, reject) =&gt; {
+            request
+                .get(url, (error, response, fastaProteins) =&gt; {
+                    if(error){
+                        return reject(error);
+                    } else {
+                        if(fastaProteins.length &gt; 0){
+                            return fromFasta(fastaProteins, alphabets.IUPAC2)
+                                .then(result =&gt; {
+                                    resolve(result);
+                                })
+                                .catch(error =&gt; {
+                                    reject(error);
+                                });
+                        } else {
+                            return reject(&quot;No sequences found&quot;);
+                        }
+                    }
+                });
+        });
+    }
+}</code></pre>
           <section id="fromSequence">
             <h1>fromSequence</h1>
             <h5 class="subheader"></h5>
@@ -295,7 +353,7 @@
               </tr>
               <tr>
                 <td>alphabet</td>
-                <td>String</td>
+                <td>Number</td>
                 <td><p>A string representing the alphabet to use for validation.                                          Valid alphabets include <a href="http://www.bioinformatics.org/sms/iupac.html">&quot;IUPAC&quot;</a>,<br />                                         <a href="http://www.bioinformatics.org/sms2/iupac.html">&quot;IUPAC2&quot;</a>,<br />                                         <a href="http://www.bioinformatics.org/sms2/iupac.html">&quot;EXTENDED-IUPAC2&quot;</a>,<br />                                         <a href="https://blast.ncbi.nlm.nih.gov/Blast.cgi?CMD=Web&amp;PAGE_TYPE=BlastDocs&amp;DOC_TYPE=BlastHelp">&quot;PSI-BLAST&quot;</a>.<br />                                         Default is <a href="http://www.bioinformatics.org/sms/iupac.html">&quot;IUPAC&quot;</a>.</p></td>
               </tr>
               <tr>
@@ -341,7 +399,7 @@
               </tr>
               <tr>
                 <td>alphabet</td>
-                <td>String</td>
+                <td>Number</td>
                 <td><p>A string representing the alphabet to use for validation.                                          Valid alphabets include <a href="http://www.bioinformatics.org/sms/iupac.html">&quot;IUPAC&quot;</a>,<br />                                         <a href="http://www.bioinformatics.org/sms2/iupac.html">&quot;IUPAC2&quot;</a>,<br />                                         <a href="http://www.bioinformatics.org/sms2/iupac.html">&quot;EXTENDED-IUPAC2&quot;</a>,<br />                                         <a href="https://blast.ncbi.nlm.nih.gov/Blast.cgi?CMD=Web&amp;PAGE_TYPE=BlastDocs&amp;DOC_TYPE=BlastHelp">&quot;PSI-BLAST&quot;</a>.<br />                                         Default is <a href="http://www.bioinformatics.org/sms/iupac.html">&quot;IUPAC&quot;</a>.</p></td>
               </tr>
               <tr>
@@ -355,16 +413,13 @@
           <pre><code class="language-javascript">function validInput(text, alphabet) {
     switch(true){
         case (accessionNumberRegex.test(text)):
-            return parsers.uniprot;
-            break;
+            return parsers.accession;
         case sequenceParser(alphabet).test(text):
-            // Return nested function, so that alphabet is defined at this stage already (avoid inconsistency!)
             return parsers.aa;
-            break;
         case validFasta(text, alphabet):
-            // Return nested function, so that alphabet is defined at this stage already (avoid inconsistency!)
             return parsers.fasta;
-            break;
+        case (uniprotNameRegex.test(text)):
+            return parsers.uniprot;
         default:
             return undefined;
     }
@@ -392,7 +447,7 @@
               </tr>
               <tr>
                 <td>alphabet</td>
-                <td>String</td>
+                <td>Number</td>
                 <td><p>A string representing the alphabet to use for validation.                                          Valid alphabets include <a href="http://www.bioinformatics.org/sms/iupac.html">&quot;IUPAC&quot;</a>,<br />                                         <a href="http://www.bioinformatics.org/sms2/iupac.html">&quot;IUPAC2&quot;</a>,<br />                                         <a href="http://www.bioinformatics.org/sms2/iupac.html">&quot;EXTENDED-IUPAC2&quot;</a>,<br />                                         <a href="https://blast.ncbi.nlm.nih.gov/Blast.cgi?CMD=Web&amp;PAGE_TYPE=BlastDocs&amp;DOC_TYPE=BlastHelp">&quot;PSI-BLAST&quot;</a>.<br />                                         Default is <a href="http://www.bioinformatics.org/sms/iupac.html">&quot;IUPAC&quot;</a>.</p></td>
               </tr>
               <tr>
@@ -407,15 +462,14 @@
     switch(true){
         case (accessionNumberRegex.test(text)):
             return fromAccession;
-            break;
         case sequenceParser(alphabet).test(text):
             // Return nested function, so that alphabet is defined at this stage already (avoid inconsistency!)
             return (text) =&gt; fromSequence(text, alphabet);
-            break;
         case validFasta(text, alphabet):
             // Return nested function, so that alphabet is defined at this stage already (avoid inconsistency!)
             return (text) =&gt; fromFasta(text, alphabet);
-            break;
+        case (uniprotNameRegex.test(text)):
+            return fromUniprotQuery;
         default:
             return undefined;
     }
@@ -446,12 +500,14 @@
           <pre><code class="language-javascript">const parsers = {
     fasta: 0,
     aa: 1,
-    uniprot: 2,
+    accession: 2,
+    uniprot: 3
 };
 
 exports.Protein = Protein;
 exports.fromFasta = fromFasta;
 exports.fromAccession = fromAccession;
+exports.fromUniprotQuery = fromUniprotQuery;
 exports.fromSequence = fromSequence;
 exports.validInput = validInput;
 exports.autodetect = autodetect;

@@ -59,4 +59,4 @@ export function validUniprotQuery(query) {
 }
 
 // TODO: could use some more work...
-export const uniprotNameRegex = /[A-Z]+_[A-Z]+/;
+export const uniprotNameRegex = /[A-Z]{3,20}_[A-Z]{3,20}/;
