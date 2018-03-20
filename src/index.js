@@ -163,9 +163,28 @@ export function fromFasta(text, alphabet){
                 }
             });
 
-        return resolve([sequences.map(s => {
-            return new Protein(s.sequence);
-        }),sequences]);
+        let promises = [];
+
+        sequences.forEach(s => {
+            promises.push(new Promise((resolve, reject) => {
+                    let uniprotAccession = s.headerInfo.find(p => p.database === "sp");
+
+                    if(uniprotAccession){
+                        fromAccession(uniprotAccession.identifier)
+                            .then(([proteins, _]) => {
+                                resolve(proteins[0]);
+                            })
+                            .catch(e => reject(e));
+                    } else {
+                        resolve(new Protein(s.sequence));
+                    }
+                })
+            );
+        });
+
+        return Promise.all(promises)
+            .then(proteins => resolve([proteins, sequences]))
+            .catch(e => reject(e));
     });
 }
 
@@ -224,6 +243,7 @@ export function fromAccession(accession) {
  *
  *
  * @param           {String}    query   A string representing a protein name, a gene name, or anything UniProt-queriable
+ * @param           {Number}    limit   A number representing the max amount of returned sequences by the query. If omitted, defaults to 2. Set to `undefined` for no limit.
  *
  * @return      {Promise}   A promise that in it's `then` clause accepts an array parameter
  * which can be decomposed (`then([p,r])`:
@@ -231,14 +251,18 @@ export function fromAccession(accession) {
  * (r) being an array containing the raw FASTA sequences parsed
  * Promise get's rejected (aka. `catch` clause) if some parsing error occurs.
  */
-export function fromUniprotQuery(query) {
+export function fromUniprotQuery(query, limit=2) {
 
-    let url = 'https://www.accession.org/accession/?format=fasta&query=' + query;
+    // Limit to two entries: if more than 1, you know: identifier is not unique!
+    let url = 'https://www.uniprot.org/uniprot/?format=fasta&limit=' + limit + '&query=' + query;
+
+    if(limit === undefined){
+        url = 'https://www.uniprot.org/uniprot/?format=fasta&query=' + query;
+    }
 
     if (process.browser) {
         return new Promise((resolve, reject) => {
             $.get(url, (fastaProteins) => {
-
                 if(fastaProteins.length > 0){
                     return fromFasta(fastaProteins, alphabets.IUPAC2)
                         .then(result => {
@@ -250,8 +274,6 @@ export function fromUniprotQuery(query) {
                 } else {
                     return reject("No sequences found");
                 }
-
-
             }).fail(() => {
                 return reject();
             });
