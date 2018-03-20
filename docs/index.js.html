@@ -214,9 +214,28 @@
                 }
             });
 
-        return resolve([sequences.map(s =&gt; {
-            return new Protein(s.sequence);
-        }),sequences]);
+        let promises = [];
+
+        sequences.forEach(s =&gt; {
+            promises.push(new Promise((resolve, reject) =&gt; {
+                    let uniprotAccession = s.headerInfo.find(p =&gt; p.database === &quot;sp&quot;);
+
+                    if(uniprotAccession){
+                        fromAccession(uniprotAccession.identifier)
+                            .then(([proteins, _]) =&gt; {
+                                resolve(proteins[0]);
+                            })
+                            .catch(e =&gt; reject(e));
+                    } else {
+                        resolve(new Protein(s.sequence));
+                    }
+                })
+            );
+        });
+
+        return Promise.all(promises)
+            .then(proteins =&gt; resolve([proteins, sequences]))
+            .catch(e =&gt; reject(e));
     });
 }</code></pre>
           <section id="fromAccession">
@@ -296,6 +315,11 @@
                 <td><p>A string representing a protein name, a gene name, or anything UniProt-queriable</p></td>
               </tr>
               <tr>
+                <td>limit</td>
+                <td>Number</td>
+                <td><p>A number representing the max amount of returned sequences by the query. If omitted, defaults to 2. Set to <code>undefined</code> for no limit.</p></td>
+              </tr>
+              <tr>
                 <td>return</td>
                 <td>Promise</td>
                 <td><p>A promise that in it&#39;s <code>then</code> clause accepts an array parameter which can be decomposed (<code>then([p,r])</code>:<br />(p) being an array of Protein objects<br />(r) being an array containing the raw FASTA sequences parsed<br />Promise get&#39;s rejected (aka. <code>catch</code> clause) if some parsing error occurs.</p></td>
@@ -303,9 +327,14 @@
             </tbody>
           </table>
           <div class="description"><p>Get Protein objects (via UniProt).</p></div>
-          <pre><code class="language-javascript">function fromUniprotQuery(query) {
+          <pre><code class="language-javascript">function fromUniprotQuery(query, limit=2) {
 
-    let url = 'https://www.accession.org/accession/?format=fasta&amp;query=' + query;
+    // Limit to two entries: if more than 1, you know: identifier is not unique!
+    let url = 'https://www.uniprot.org/uniprot/?format=fasta&amp;limit=' + limit + '&amp;query=' + query;
+
+    if(limit === undefined){
+        url = 'https://www.uniprot.org/uniprot/?format=fasta&amp;query=' + query;
+    }
 
     {
         return new Promise((resolve, reject) =&gt; {

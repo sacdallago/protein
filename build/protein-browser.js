@@ -10379,6 +10379,8 @@ return jQuery;
 "use strict";
 
 
+var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
+
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
 var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
@@ -10713,9 +10715,35 @@ function fromFasta(text, alphabet) {
             }
         });
 
-        return resolve([sequences.map(function (s) {
-            return new Protein(s.sequence);
-        }), sequences]);
+        var promises = [];
+
+        sequences.forEach(function (s) {
+            promises.push(new Promise(function (resolve, reject) {
+                var uniprotAccession = s.headerInfo.find(function (p) {
+                    return p.database === "sp";
+                });
+
+                if (uniprotAccession) {
+                    fromAccession(uniprotAccession.identifier).then(function (_ref) {
+                        var _ref2 = _slicedToArray(_ref, 2),
+                            proteins = _ref2[0],
+                            _ = _ref2[1];
+
+                        resolve(proteins[0]);
+                    }).catch(function (e) {
+                        return reject(e);
+                    });
+                } else {
+                    resolve(new Protein(s.sequence));
+                }
+            }));
+        });
+
+        return Promise.all(promises).then(function (proteins) {
+            return resolve([proteins, sequences]);
+        }).catch(function (e) {
+            return reject(e);
+        });
     });
 }
 
@@ -10759,6 +10787,7 @@ function fromAccession(accession) {
  *
  *
  * @param           {String}    query   A string representing a protein name, a gene name, or anything UniProt-queriable
+ * @param           {Number}    limit   A number representing the max amount of returned sequences by the query. If omitted, defaults to 2. Set to `undefined` for no limit.
  *
  * @return      {Promise}   A promise that in it's `then` clause accepts an array parameter
  * which can be decomposed (`then([p,r])`:
@@ -10767,13 +10796,19 @@ function fromAccession(accession) {
  * Promise get's rejected (aka. `catch` clause) if some parsing error occurs.
  */
 function fromUniprotQuery(query) {
+    var limit = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 2;
 
-    var url = 'https://www.accession.org/accession/?format=fasta&query=' + query;
+
+    // Limit to two entries: if more than 1, you know: identifier is not unique!
+    var url = 'https://www.uniprot.org/uniprot/?format=fasta&limit=' + limit + '&query=' + query;
+
+    if (limit === undefined) {
+        url = 'https://www.uniprot.org/uniprot/?format=fasta&query=' + query;
+    }
 
     {
         return new Promise(function (resolve, reject) {
             $.get(url, function (fastaProteins) {
-
                 if (fastaProteins.length > 0) {
                     return fromFasta(fastaProteins, alphabets.IUPAC2).then(function (result) {
                         resolve(result);
