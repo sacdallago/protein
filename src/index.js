@@ -178,7 +178,7 @@ export function fromFasta(text, alphabet){
                             .then(([proteins, _]) => {
                                 resolve(proteins[0]);
                             })
-                            .catch(e => reject(e));
+                            .catch(() => resolve(new Protein(s.sequence)));
                     } else {
                         resolve(new Protein(s.sequence));
                     }
