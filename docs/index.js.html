@@ -98,8 +98,12 @@
         }
     }
 
-    getUniprotData(uniprotData){
+    getUniprotData(){
         return this.uniprotData;
+    }
+
+    getUniprotAccession(){
+        return this.uniprotData &amp;&amp; this.uniprotData.accession
     }
 }</code></pre>
           <section id="fromFasta">
