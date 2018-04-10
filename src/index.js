@@ -60,8 +60,12 @@ export class Protein {
         }
     }
 
-    getUniprotData(uniprotData){
+    getUniprotData(){
         return this.uniprotData;
+    }
+
+    getUniprotAccession(){
+        return this.uniprotData && this.uniprotData.accession
     }
 }
 
