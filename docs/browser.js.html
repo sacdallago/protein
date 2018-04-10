@@ -224,7 +224,7 @@
                             .then(([proteins, _]) =&gt; {
                                 resolve(proteins[0]);
                             })
-                            .catch(e =&gt; reject(e));
+                            .catch(() =&gt; resolve(new Protein(s.sequence)));
                     } else {
                         resolve(new Protein(s.sequence));
                     }
