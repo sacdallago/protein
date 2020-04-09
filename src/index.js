@@ -385,6 +385,7 @@ export function validInput(text, alphabet) {
 export function autodetect(text, alphabet) {
     switch(true){
         case (accessionNumberRegex.test(text)):
+        case (accessionNumberRegex.test(text.toUpperCase())):
             return fromAccession;
         case sequenceParser(alphabet).test(text):
             // Return nested function, so that alphabet is defined at this stage already (avoid inconsistency!)
@@ -392,6 +393,7 @@ export function autodetect(text, alphabet) {
         case validFasta(text, alphabet):
             // Return nested function, so that alphabet is defined at this stage already (avoid inconsistency!)
             return (text) => fromFasta(text, alphabet);
+        case (uniprotNameRegex.test(text.toUpperCase())):
         case (uniprotNameRegex.test(text)):
             return fromUniprotQuery;
         default:
